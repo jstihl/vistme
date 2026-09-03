@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="sv" class="h-full w-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VistMe — Global Nomad Map</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #0f172a;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100vw;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      background: #0f172a;
+    }
+
+    /* Bottom Sheet animation för mobil */
+    .sheet-transition { 
+      transition: transform 0.3s ease-in-out; 
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans h-full w-full relative">
+
+  <!-- Header / Top Bar -->
+  <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">📌</span>
+      <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">VistMe</h1>
+    </div>
+    
+    <div id="auth-section">
+      <button id="login-btn" onclick="loginWithGoogle()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg flex items-center gap-2">
+        <span>Logga in med Google</span>
+      </button>
+      <div id="user-profile" class="hidden flex items-center gap-3">
+        <span id="pioneer-badge" class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-1 rounded-full border border-amber-500/30 font-semibold">Pioneer</span>
+        <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition">Logga ut</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Karta -->
+  <div id="map"></div>
+
+  <!-- Flytande Tum-knapp -->
+  <button id="action-btn" onclick="openPinModal()" class="fixed bottom-6 right-6 z-10 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold transition transform active:scale-95 border border-indigo-400/30">
+    <span class="text-xl">📍</span>
+    <span class="hidden sm:inline">Sätt/Redigera Nål</span>
+  </button>
+
+  <!-- Bottom Sheet / Modal för Reviews -->
+  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[85vh] overflow-y-auto">
+    <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeBottomSheet()"></div>
+    
+    <!-- Innehåll för Vald Plats -->
+    <div id="sheet-content">
+      <h2 id="sheet-title" class="text-2xl font-bold mb-1">Välj en plats</h2>
+      <p id="sheet-subtitle" class="text-slate-400 text-sm mb-4">Klicka på en nål för att läsa reviews</p>
+      <div id="reviews-list" class="space-y-4"></div>
+    </div>
+
+    <!-- Formulär: Sätt eller Redigera Nål -->
+    <div id="pin-form" class="hidden space-y-4">
+      <h2 id="form-title" class="text-xl font-bold">Lägg till / Redigera din Review</h2>
+      <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Lissabon)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+      
+      <div class="relative">
+        <textarea id="review-input" maxlength="1500" rows="5" oninput="updateCharCount()" placeholder="Skriv din micro-review (Max 1 500 tecken). Länkar går bra..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500"></textarea>
+        <div class="text-right text-xs text-slate-500 mt-1">
+          <span id="char-count">0</span> / 1500 tecken
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 text-sm text-slate-300">
+        <input type="checkbox" id="couch-check" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+        <label for="couch-check">Erbjuder Soffa / Pitstop 🛋️</label>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition">Spara Nål</button>
+        <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =================================================================
+    // 1. SUPABASE KONFIGURATION (Ersätt med dina egna nycklar från Supabase)
+    // =================================================================
+    const SUPABASE_URL = 'https://DIN-SUPABASE-URL.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
+    
+    let supabaseClient = null;
+    let map = null;
+    let currentUser = null;
+
+    if (SUPABASE_URL !== 'https://uzadvxbtgrkmuagjtkfr.supabase.co/') {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // =================================================================
+    // 2. KARTA OCH INIT (Med ÄKTA Mörk Karta)
+    // =================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      // Initiera Leaflet med mjuk pan/zoom
+      map = L.map('map', { 
+        zoomControl: false,
+        worldCopyJump: true
+      }).setView([20, 0], 2);
+      
+      // Äkta Mörk Kart-tile från CartoDB (Inga CSS-filter som spökar!)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        minZoom: 2,
+        subdomains: 'abcd',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+      }).addTo(map);
+
+      setTimeout(() => { map.invalidateSize(); }, 200);
+
+      if (supabaseClient) {
+        checkUserSession();
+        loadPins();
+      }
+    });
+
+    // =================================================================
+    // 3. AUTHENTICATION (GOOGLE)
+    // =================================================================
+    async function checkUserSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) handleUserSession(session.user);
+    }
+
+    async function loginWithGoogle() {
+      if (!supabaseClient) return alert('Ersätt SUPABASE_URL och SUPABASE_ANON_KEY i koden först!');
+      const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+      if (error) alert('Inloggning misslyckades: ' + error.message);
+    }
+
+    async function logout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      window.location.reload();
+    }
+
+    function handleUserSession(user) {
+      currentUser = user;
+      document.getElementById('login-btn').classList.add('hidden');
+      document.getElementById('user-profile').classList.remove('hidden');
+    }
+
+    // =================================================================
+    // 4. HÄMTA OCH RITA NÅLAR
+    // =================================================================
+    async function loadPins() {
+      if (!supabaseClient) return;
+      
+      const { data: pins, error } = await supabaseClient.from('user_pins').select('*');
+      if (error) return console.error('Kunde inte hämta nålar:', error);
+
+      pins.forEach(pin => {
+        if (pin.lat && pin.lng) {
+          const marker = L.marker([pin.lat, pin.lng]).addTo(map);
+          marker.on('click', () => showReviewsForLocation(pin.location_name));
+        }
+      });
+    }
+
+    // =================================================================
+    // 5. BOTTOM SHEET LOGIK
+    // =================================================================
+    function openPinModal() {
+      if (!currentUser && supabaseClient) {
+        return loginWithGoogle();
+      }
+      document.getElementById('sheet-content').classList.add('hidden');
+      document.getElementById('pin-form').classList.remove('hidden');
+      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+    }
+
+    function closeBottomSheet() {
+      document.getElementById('bottom-sheet').classList.add('translate-y-full');
+    }
+
+    function updateCharCount() {
+      const text = document.getElementById('review-input').value;
+      document.getElementById('char-count').innerText = text.length;
+    }
+
+    // =================================================================
+    // 6. SPARA NÅL (UPSERT)
+    // =================================================================
+    async function savePin() {
+      if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
+
+      const location = document.getElementById('location-input').value.trim();
+      const review = document.getElementById('review-input').value.trim();
+      const hasCouch = document.getElementById('couch-check').checked;
+
+      if (!location || !review) return alert('Fyll i både plats och review!');
+
+      const { error } = await supabaseClient.from('user_pins').upsert({
+        user_id: currentUser.id,
+        location_name: location,
+        review_text: review,
+        has_couch: hasCouch,
+        updated_at: new Date()
+      }, { onConflict: 'user_id, location_name' });
+
+      if (error) {
+        alert('Ett fel uppstod: ' + error.message);
+      } else {
+        alert('Din nål/review har sparats!');
+        closeBottomSheet();
+        loadPins();
+      }
+    }
+  </script>
+</body>
+</html>
