@@ -48,22 +48,31 @@
 
   <!-- Header / Top Bar -->
   <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">📌</span>
-      <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">VistMe <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Beta</span></h1>
+    
+    <!-- Vänster sida: Logga + Mina Post-its-knapp -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">📌</span>
+        <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Beta</span></h1>
+      </div>
+      
+      <!-- Knappen placerad till vänster -->
+      <button onclick="openMyPinsModal()" class="text-xs bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 px-3 py-2 rounded-xl font-medium transition flex items-center gap-1.5 cursor-pointer shadow-md">
+        <span>📌</span>
+        <span>Mina Post-its</span>
+      </button>
     </div>
     
+    <!-- Höger sida: Inloggning / Profil -->
     <div id="auth-section">
-      <!-- Inloggningsknapp (visas som standard) -->
       <button id="login-btn" onclick="loginWithGoogle()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg flex items-center gap-2 cursor-pointer">
         <span>Logga in med Google</span>
       </button>
 
-      <!-- Profil- och utloggningssektion (dold som standard, visas vid inloggning) -->
       <div id="user-profile" class="hidden flex items-center gap-2 sm:gap-3">
-        <span class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-1 rounded-full border border-amber-500/30 font-semibold">Pioneer</span>
-        <button onclick="openProfileModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-indigo-300 px-3 py-1.5 rounded-xl font-medium transition cursor-pointer">Min Profil</button>
-        <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition cursor-pointer">Logga ut</button>
+        <span class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-1 rounded-full border border-amber-500/30 font-semibold hidden md:inline">Pioneer</span>
+        <button onclick="openProfileModal()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-indigo-300 px-3 py-2 rounded-xl font-medium transition cursor-pointer">Profil</button>
+        <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition cursor-pointer px-1">Logga ut</button>
       </div>
     </div>
   </header>
@@ -77,7 +86,33 @@
     <span class="hidden sm:inline">Sätt/Redigera Nål</span>
   </button>
 
-  <!-- Bottom Sheet / Modal -->
+  <!-- Helskärms-modal för "Mina Post-its" -->
+  <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h2 class="text-xl font-bold text-indigo-300">Dina aktiva Post-its</h2>
+          <p class="text-xs text-slate-400">Här ser du en komplett lista över alla platser du har märkt ut.</p>
+        </div>
+        <button onclick="closeMyPinsModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
+      </div>
+
+      <!-- Modal Body (Scrollbar lista) -->
+      <div id="mypins-list-container" class="p-6 overflow-y-auto space-y-4 flex-1">
+        <p class="text-xs text-slate-500 italic">Laddar dina post-its...</p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+        <button onclick="closeMyPinsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Stäng</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom Sheet / Modal (för nål- och profilformulär) -->
   <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[85vh] overflow-y-auto">
     <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeBottomSheet()"></div>
     
@@ -111,11 +146,11 @@
       </div>
     </div>
 
-    <!-- Formulär: Profil & Mina Post-its -->
-    <div id="profile-form" class="hidden space-y-6">
+    <!-- Formulär: Endast Profil -->
+    <div id="profile-form" class="hidden space-y-4">
       <div>
-        <h2 class="text-xl font-bold mb-1">Din Profil & Post-its</h2>
-        <p class="text-slate-400 text-sm">Hantera ditt smeknamn och se eller redigera dina aktiva post-it-nålars på kartan.</p>
+        <h2 class="text-xl font-bold mb-1">Din Profil</h2>
+        <p class="text-slate-400 text-sm">Här anger du ditt smeknamn som visas på dina nålar, samt valfri kontakt-e-post.</p>
       </div>
       
       <div class="space-y-3 bg-slate-800/40 p-4 rounded-2xl border border-slate-800">
@@ -132,16 +167,8 @@
         <button onclick="saveProfile()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-sm font-bold transition cursor-pointer">Spara Profilinställningar</button>
       </div>
 
-      <!-- Lista över användarens egna Post-its -->
-      <div>
-        <h3 class="font-bold text-base mb-3 text-indigo-300">Dina aktiva Post-its</h3>
-        <div id="user-pins-list" class="space-y-3">
-          <p class="text-xs text-slate-500 italic">Laddar dina post-its...</p>
-        </div>
-      </div>
-
       <div class="pt-2">
-        <button onclick="closeBottomSheet()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-medium transition cursor-pointer">Stäng fönstret</button>
+        <button onclick="closeBottomSheet()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-medium transition cursor-pointer">Stäng</button>
       </div>
     </div>
   </div>
@@ -262,7 +289,11 @@
     }
 
     function openPinModal() {
-      if (!currentUser && supabaseClient) return loginWithGoogle();
+      if (!currentUser) {
+        alert('Du behöver logga in för att sätta en nål!');
+        return loginWithGoogle();
+      }
+      closeBottomSheet();
       document.getElementById('profile-form').classList.add('hidden');
       document.getElementById('pin-form').classList.remove('hidden');
       document.getElementById('sheet-content').classList.add('hidden');
@@ -273,7 +304,12 @@
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
 
-    async function openProfileModal() {
+    function openProfileModal() {
+      if (!currentUser) {
+        alert('Du behöver logga in för att se din profil!');
+        return loginWithGoogle();
+      }
+      closeBottomSheet();
       document.getElementById('pin-form').classList.add('hidden');
       document.getElementById('sheet-content').classList.add('hidden');
       document.getElementById('profile-form').classList.remove('hidden');
@@ -286,14 +322,26 @@
         document.getElementById('profile-email').value = '';
       }
 
-      // Hämta användarens egna post-its och fyll i listan
-      await loadUserPinsList();
-
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
 
-    async function loadUserPinsList() {
-      const container = document.getElementById('user-pins-list');
+    // Helskärms-modal för "Mina Post-its"
+    async function openMyPinsModal() {
+      if (!currentUser) {
+        alert('Du behöver logga in för att se dina post-its!');
+        return loginWithGoogle();
+      }
+      closeBottomSheet();
+      document.getElementById('mypins-modal').classList.remove('hidden');
+      await loadMyPinsList();
+    }
+
+    function closeMyPinsModal() {
+      document.getElementById('mypins-modal').classList.add('hidden');
+    }
+
+    async function loadMyPinsList() {
+      const container = document.getElementById('mypins-list-container');
       container.innerHTML = '<p class="text-xs text-slate-500 italic">Hämtar dina post-its...</p>';
 
       if (!currentUser) return;
@@ -310,40 +358,42 @@
       }
 
       if (!pins || pins.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 italic">Du har inte satt ut några post-its ännu. Klicka på "Sätt/Redigera Nål" för att börja!</p>';
+        container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-10">Du har inte satt ut några post-its ännu. Klicka på "Sätt/Redigera Nål" på kartan för att börja!</p>';
         return;
       }
 
       container.innerHTML = '';
       pins.forEach(pin => {
         const card = document.createElement('div');
-        card.className = 'bg-slate-800 border border-slate-700/80 rounded-xl p-3 text-slate-200 text-sm relative';
+        card.className = 'bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 text-slate-200 text-sm relative';
         card.innerHTML = `
-          <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-indigo-400">${escapeHtml(pin.display_name)}</span>
-            <span class="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">${pin.has_couch ? '🛋️ Soffa' : '📍 Nål'}</span>
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold text-base text-indigo-300">${escapeHtml(pin.display_name)}</span>
+            <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-500/30">${pin.has_couch ? '🛋️ Erbjuder Soffa' : '📍 Post-it'}</span>
           </div>
-          <p class="text-xs text-slate-300 line-clamp-2 mb-2">${escapeHtml(pin.review_text)}</p>
-          <div class="flex gap-3 text-xs pt-2 border-t border-slate-700/50">
-            <button onclick="editPinFromProfile('${pin.location_name}', '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', ${pin.has_couch}, '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+          <p class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed mb-3">${escapeHtml(pin.review_text)}</p>
+          <div class="flex gap-4 text-xs pt-3 border-t border-slate-700/50">
+            <button onclick="closeMyPinsModal(); editPinFromMyPins('${pin.location_name}', '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', ${pin.has_couch}, '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
             <span class="text-slate-600">|</span>
-            <button onclick="deletePinFromProfile('${pin.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+            <button onclick="deletePinFromMyPins('${pin.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    function editPinFromProfile(locationName, text, hasCouch, displayName) {
+    function editPinFromMyPins(locationName, text, hasCouch, displayName) {
       document.getElementById('profile-form').classList.add('hidden');
       document.getElementById('pin-form').classList.remove('hidden');
+      document.getElementById('sheet-content').classList.add('hidden');
       document.getElementById('location-input').value = displayName;
       document.getElementById('review-input').value = text;
       document.getElementById('couch-check').checked = hasCouch;
       updateCharCount();
+      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
 
-    async function deletePinFromProfile(locationName) {
+    async function deletePinFromMyPins(locationName) {
       if (!confirm('Är du säker på att du vill radera denna post-it?')) return;
 
       const { error } = await supabaseClient
@@ -356,7 +406,7 @@
         alert('Kunde inte radera: ' + error.message);
       } else {
         alert('Post-it har raderats.');
-        loadUserPinsList();
+        loadMyPinsList();
         loadPins();
       }
     }
@@ -380,6 +430,7 @@
         alert('Profilen har sparats!');
         userProfile = { id: currentUser.id, nickname, contact_email: contactEmail };
         loadPins();
+        closeBottomSheet();
       }
     }
 
@@ -408,9 +459,9 @@
         if (isOwner) {
           ownerActions = `
             <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
-              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}', ${review.has_couch})" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+              <button onclick="closeBottomSheet(); editPinFromMyPins('${review.location_name}', '${escapeHtml(review.review_text).replace(/'/g, "\\'")}', ${review.has_couch}, '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
               <span class="text-slate-600">|</span>
-              <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+              <button onclick="deletePinFromMyPins('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
             </div>
           `;
         }
@@ -431,34 +482,6 @@
       });
 
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
-    }
-
-    function editPin(locationName, text, hasCouch) {
-      document.getElementById('sheet-content').classList.add('hidden');
-      document.getElementById('profile-form').classList.add('hidden');
-      document.getElementById('pin-form').classList.remove('hidden');
-      document.getElementById('location-input').value = locationName;
-      document.getElementById('review-input').value = text;
-      document.getElementById('couch-check').checked = hasCouch;
-      updateCharCount();
-    }
-
-    async function deletePin(locationName) {
-      if (!confirm('Är du säker på att du vill radera din post-it för denna plats?')) return;
-
-      const { error } = await supabaseClient
-        .from('user_pins')
-        .delete()
-        .eq('user_id', currentUser.id)
-        .eq('location_name', locationName);
-
-      if (error) {
-        alert('Kunde inte radera: ' + error.message);
-      } else {
-        alert('Post-it har raderats.');
-        closeBottomSheet();
-        loadPins();
-      }
     }
 
     function closeBottomSheet() {
