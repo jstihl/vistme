@@ -35,12 +35,10 @@
       background: #0b0f19;
     }
 
-    /* Mörkt filter anpassat för Esri med skarp engelsk text */
     .leaflet-tile-pane {
       filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8);
     }
 
-    /* Bottom Sheet animation för mobil */
     .sheet-transition { 
       transition: transform 0.3s ease-in-out; 
     }
@@ -75,26 +73,26 @@
     <span class="hidden sm:inline">Sätt/Redigera Nål</span>
   </button>
 
-  <!-- Bottom Sheet / Modal för Reviews -->
+  <!-- Bottom Sheet / Modal -->
   <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[85vh] overflow-y-auto">
     <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeBottomSheet()"></div>
     
-    <!-- Innehåll för Vald Plats -->
+    <!-- Visar recensioner för en plats -->
     <div id="sheet-content">
       <h2 id="sheet-title" class="text-2xl font-bold mb-1">Välj en plats</h2>
       <p id="sheet-subtitle" class="text-slate-400 text-sm mb-4">Klicka på en nål för att läsa reviews</p>
       <div id="reviews-list" class="space-y-4"></div>
     </div>
 
-    <!-- Formulär: Sätt eller Redigera Nål -->
+    <!-- Formulär: Lägg till / Redigera nål -->
     <div id="pin-form" class="hidden space-y-4">
       <h2 id="form-title" class="text-xl font-bold">Lägg till / Redigera din Review</h2>
-      <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Lissabon)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+      <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Larnaca)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
       
       <div class="relative">
-        <textarea id="review-input" maxlength="1500" rows="5" oninput="updateCharCount()" placeholder="Skriv din micro-review (Max 1 500 tecken). Länkar går bra..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500"></textarea>
+        <textarea id="review-input" maxlength="1000" rows="5" oninput="updateCharCount()" placeholder="Skriv din micro-review (Max 1 000 tecken). Länkar går bra..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500"></textarea>
         <div class="text-right text-xs text-slate-500 mt-1">
-          <span id="char-count">0</span> / 1500 tecken
+          <span id="char-count">0</span> / 1000 tecken
         </div>
       </div>
 
@@ -111,23 +109,18 @@
   </div>
 
   <script>
-    // =================================================================
-    // 1. SUPABASE KONFIGURATION
-    // =================================================================
     const SUPABASE_URL = 'https://uzadvxbtgrkmuagjtkfr.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
     
     let supabaseClient = null;
     let map = null;
     let currentUser = null;
+    let markersLayer = null;
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    // =================================================================
-    // 2. KARTA OCH INIT
-    // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
       const southWest = L.latLng(-85, -180);
       const northEast = L.latLng(85, 180);
@@ -147,6 +140,7 @@
         attribution: 'Tiles &copy; Esri'
       }).addTo(map);
 
+      markersLayer = L.layerGroup().addTo(map);
       setTimeout(() => { map.invalidateSize(); }, 100);
 
       if (supabaseClient) {
@@ -155,9 +149,6 @@
       }
     });
 
-    // =================================================================
-    // 3. AUTHENTICATION (GOOGLE)
-    // =================================================================
     async function checkUserSession() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) handleUserSession(session.user);
@@ -167,9 +158,7 @@
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
       const { error } = await supabaseClient.auth.signInWithOAuth({ 
         provider: 'google',
-        options: {
-          redirectTo: 'https://jstihl.github.io/vistme/'
-        }
+        options: { redirectTo: 'https://jstihl.github.io/vistme/' }
       });
       if (error) alert('Inloggning misslyckades: ' + error.message);
     }
@@ -185,54 +174,116 @@
       document.getElementById('user-profile').classList.remove('hidden');
     }
 
-    // =================================================================
-    // 4. HÄMTA OCH RITA NÅLAR
-    // =================================================================
+    function normalizeLocationName(name) {
+      return name
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+    }
+
     async function loadPins() {
       if (!supabaseClient) return;
       
+      markersLayer.clearLayers();
       const { data: pins, error } = await supabaseClient.from('user_pins').select('*');
       if (error) return console.error('Kunde inte hämta nålar:', error);
 
+      const locationsMap = {};
       pins.forEach(pin => {
-        if (pin.lat && pin.lng) {
-          const marker = L.marker([pin.lat, pin.lng]).addTo(map);
-          marker.on('click', () => showLocationDetails(pin));
+        const key = pin.location_name;
+        if (!locationsMap[key]) {
+          locationsMap[key] = {
+            display_name: pin.display_name,
+            lat: pin.lat,
+            lng: pin.lng,
+            reviews: []
+          };
         }
+        locationsMap[key].reviews.push(pin);
+      });
+
+      Object.values(locationsMap).forEach(loc => {
+        const marker = L.marker([loc.lat, loc.lng]).addTo(markersLayer);
+        marker.on('click', () => showLocationDetails(loc));
       });
     }
 
-    // =================================================================
-    // 5. BOTTOM SHEET LOGIK & VISA PLATSINFO
-    // =================================================================
     function openPinModal() {
-      if (!currentUser && supabaseClient) {
-        return loginWithGoogle();
-      }
-      document.getElementById('sheet-content').classList.add('hidden');
+      if (!currentUser && supabaseClient) return loginWithGoogle();
       document.getElementById('pin-form').classList.remove('hidden');
+      document.getElementById('sheet-content').classList.add('hidden');
+      document.getElementById('location-input').value = '';
+      document.getElementById('review-input').value = '';
+      document.getElementById('couch-check').checked = false;
+      updateCharCount();
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
 
-    function showLocationDetails(pin) {
+    function showLocationDetails(loc) {
       document.getElementById('pin-form').classList.add('hidden');
       document.getElementById('sheet-content').classList.remove('hidden');
 
-      document.getElementById('sheet-title').innerText = pin.location_name;
-      document.getElementById('sheet-subtitle').innerText = pin.has_couch ? 'Erbjuder Soffa / Pitstop 🛋️' : 'Nomad-besökare';
+      document.getElementById('sheet-title').innerText = loc.display_name;
+      document.getElementById('sheet-subtitle').innerText = `${loc.reviews.length} nomad(er) har besökt denna plats`;
       
       const reviewsList = document.getElementById('reviews-list');
-      reviewsList.innerHTML = `
-        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200">
-          <p class="whitespace-pre-wrap leading-relaxed text-sm">${pin.review_text}</p>
-          <div class="mt-3 pt-3 border-t border-slate-700/40 flex justify-between items-center text-xs text-slate-400">
-            <span>Senast uppdaterad</span>
-            <span>${new Date(pin.updated_at).toLocaleDateString()}</span>
+      reviewsList.innerHTML = '';
+
+      loc.reviews.forEach(review => {
+        const isOwner = currentUser && review.user_id === currentUser.id;
+        const reviewCard = document.createElement('div');
+        reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative';
+        
+        let ownerActions = '';
+        if (isOwner) {
+          ownerActions = `
+            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
+              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}', ${review.has_couch})" class="text-indigo-400 hover:text-indigo-300 font-medium">Redigera</button>
+              <span class="text-slate-600">|</span>
+              <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium">Radera</button>
+            </div>
+          `;
+        }
+
+        reviewCard.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">${review.has_couch ? '🛋️ Erbjuder Soffa' : '📍 Besökare'}</span>
+            <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
           </div>
-        </div>
-      `;
+          <p class="whitespace-pre-wrap leading-relaxed text-sm">${escapeHtml(review.review_text)}</p>
+          ${ownerActions}
+        `;
+        reviewsList.appendChild(reviewCard);
+      });
 
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+    }
+
+    function editPin(locationName, text, hasCouch) {
+      document.getElementById('sheet-content').classList.add('hidden');
+      document.getElementById('pin-form').classList.remove('hidden');
+      document.getElementById('location-input').value = locationName;
+      document.getElementById('review-input').value = text;
+      document.getElementById('couch-check').checked = hasCouch;
+      updateCharCount();
+    }
+
+    async function deletePin(locationName) {
+      if (!confirm('Är du säker på att du vill radera din nål för denna plats?')) return;
+
+      const { error } = await supabaseClient
+        .from('user_pins')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('location_name', locationName);
+
+      if (error) {
+        alert('Kunde inte radera: ' + error.message);
+      } else {
+        alert('Nålen har raderats.');
+        closeBottomSheet();
+        loadPins();
+      }
     }
 
     function closeBottomSheet() {
@@ -241,21 +292,28 @@
 
     function updateCharCount() {
       const text = document.getElementById('review-input').value;
-      document.getElementById('char-count').innerText = text.length;
+      if(text.length > 1000) {
+        document.getElementById('review-input').value = text.substring(0, 1000);
+      }
+      document.getElementById('char-count').innerText = document.getElementById('review-input').value.length;
     }
 
-    // =================================================================
-    // 6. SPARA NÅL (MED GEOKODNING & SUPABASE RLS)
-    // =================================================================
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
     async function savePin() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
       if (!currentUser) return loginWithGoogle();
 
-      const location = document.getElementById('location-input').value.trim();
+      const rawLocation = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
       const hasCouch = document.getElementById('couch-check').checked;
 
-      if (!location || !review) return alert('Fyll i både plats och review!');
+      if (!rawLocation || !review) return alert('Fyll i både plats och review!');
+      if (review.length > 1000) return alert('Review får max vara 1000 tecken!');
+
+      const normalizedLocation = normalizeLocationName(rawLocation);
 
       const saveBtn = document.querySelector('#pin-form button[onclick="savePin()"]');
       const originalText = saveBtn.innerText;
@@ -263,11 +321,11 @@
       saveBtn.disabled = true;
 
       try {
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
         const geoData = await geoRes.json();
 
         if (!geoData || geoData.length === 0) {
-          alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Lissabon, Portugal").');
+          alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Larnaca").');
           saveBtn.innerText = originalText;
           saveBtn.disabled = false;
           return;
@@ -275,10 +333,15 @@
 
         const lat = parseFloat(geoData[0].lat);
         const lng = parseFloat(geoData[0].lon);
+        
+        const displayName = (geoData[0].display_name) 
+          ? geoData[0].display_name.split(',')[0] 
+          : rawLocation;
 
         const { error } = await supabaseClient.from('user_pins').upsert({
           user_id: currentUser.id,
-          location_name: location,
+          location_name: normalizedLocation,
+          display_name: displayName,
           review_text: review,
           has_couch: hasCouch,
           lat: lat,
