@@ -165,14 +165,12 @@
 
     async function loginWithGoogle() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
-      
       const { error } = await supabaseClient.auth.signInWithOAuth({ 
         provider: 'google',
         options: {
           redirectTo: 'https://jstihl.github.io/vistme/'
         }
       });
-      
       if (error) alert('Inloggning misslyckades: ' + error.message);
     }
 
@@ -244,7 +242,6 @@
       saveBtn.disabled = true;
 
       try {
-        // Hämta lat/lng automatiskt via OpenStreetMaps Nominatim API
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
         const geoData = await geoRes.json();
 
