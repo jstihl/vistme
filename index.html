@@ -120,11 +120,11 @@
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-   // =================================================================
-    // 2. KARTA OCH INIT (Låst och super-smooth)
+    // =================================================================
+    // 2. KARTA OCH INIT (Låst, supersmidig & täcker hela skärmen)
     // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      // Sätt max-gränser så man inte kan panorera utanför världskartan
+      // Sätt gränser så man inte kan dras utanför världen
       const southWest = L.latLng(-85, -180);
       const northEast = L.latLng(85, 180);
       const bounds = L.latLngBounds(southWest, northEast);
@@ -132,19 +132,18 @@
       map = L.map('map', { 
         zoomControl: false,
         maxBounds: bounds,
-        maxBoundsViscosity: 1.0, // Tvingar kartan att stanna inom världen
+        maxBoundsViscosity: 1.0, // Förhindrar att kartan dras ur bild
         bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
-      // Snygg, fri och stabil mörk kartkälla som täcker hela skärmen
+      // Stabil och extremt snabb mörk raster-tile från CartoCDN
       L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 18,
         minZoom: 2,
         subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap &copy; CARTO'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
       }).addTo(map);
 
-      // Tvinga omritning vid start
       setTimeout(() => { map.invalidateSize(); }, 100);
 
       if (supabaseClient) {
@@ -152,6 +151,7 @@
         loadPins();
       }
     });
+
     // =================================================================
     // 3. AUTHENTICATION (GOOGLE)
     // =================================================================
