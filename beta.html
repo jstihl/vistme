@@ -131,11 +131,6 @@
             <span id="char-count">0</span> / 1000 tecken
           </div>
         </div>
-
-        <div class="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/40 p-3 rounded-xl border border-slate-800">
-          <input type="checkbox" id="couch-check" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 w-4 h-4">
-          <label for="couch-check">Erbjuder Soffa / Pitstop 🛋️</label>
-        </div>
       </div>
 
       <div class="flex gap-3 mt-6 pt-4 border-t border-slate-800">
@@ -366,7 +361,6 @@
       }
       document.getElementById('location-input').value = '';
       document.getElementById('review-input').value = '';
-      document.getElementById('couch-check').checked = false;
       updateCharCount();
       document.getElementById('pin-modal').classList.remove('hidden');
     }
@@ -467,11 +461,11 @@
         card.innerHTML = `
           <div class="flex justify-between items-center mb-2">
             <span class="font-bold text-base text-indigo-300">${escapeHtml(pin.display_name)}</span>
-            <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-500/30">${pin.has_couch ? '🛋️ Soffa' : '📌 Post-it'}</span>
+            <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-500/30">📌 Post-it</span>
           </div>
           <p class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed mb-3">${escapeHtml(pin.review_text)}</p>
           <div class="flex gap-4 text-xs pt-3 border-t border-slate-700/50">
-            <button onclick="closeMyPinsModal(); editPinFromMyPins('${pin.location_name}', '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', ${pin.has_couch}, '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+            <button onclick="closeMyPinsModal(); editPinFromMyPins('${pin.location_name}', '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
             <span class="text-slate-600">|</span>
             <button onclick="deletePinFromMyPins('${pin.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
           </div>
@@ -480,10 +474,9 @@
       });
     }
 
-    function editPinFromMyPins(locationName, text, hasCouch, displayName) {
+    function editPinFromMyPins(locationName, text, displayName) {
       document.getElementById('location-input').value = displayName;
       document.getElementById('review-input').value = text;
-      document.getElementById('couch-check').checked = hasCouch;
       updateCharCount();
       document.getElementById('pin-modal').classList.remove('hidden');
     }
@@ -540,17 +533,22 @@
         const isOwner = currentUser && review.user_id === currentUser.id;
         const authorName = review.profile && review.profile.nickname ? review.profile.nickname : 'Anonym Nomad';
         const contactInfo = review.profile && review.profile.contact_email 
-          ? `<div class="text-xs text-indigo-300 mt-1">Kontakt: <a href="mailto:${review.profile.contact_email}" class="underline">${review.profile.contact_email}</a></div>` 
+          ? `<div class="text-xs text-indigo-300 mt-2">Kontakt: <a href="mailto:${review.profile.contact_email}" class="underline">${review.profile.contact_email}</a></div>` 
           : '';
 
         const reviewCard = document.createElement('div');
-        reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative';
+        reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative cursor-pointer hover:border-indigo-500/50 transition';
         
+        const fullText = escapeHtml(review.review_text);
+        const words = fullText.split(/\s+/);
+        const isLong = words.length > 10;
+        const shortText = isLong ? words.slice(0, 10).join(' ') + '...' : fullText;
+
         let ownerActions = '';
         if (isOwner) {
           ownerActions = `
-            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
-              <button onclick="closeLocationModal(); editPinFromMyPins('${review.location_name}', '${escapeHtml(review.review_text).replace(/'/g, "\\'")}', ${review.has_couch}, '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs" onclick="event.stopPropagation()">
+              <button onclick="closeLocationModal(); editPinFromMyPins('${review.location_name}', '${escapeHtml(review.review_text).replace(/'/g, "\\'")}', '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
               <span class="text-slate-600">|</span>
               <button onclick="deletePinFromMyPins('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
             </div>
@@ -563,12 +561,36 @@
             <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
           </div>
           <div class="mb-2">
-            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">${review.has_couch ? '🛋️ Erbjuder Soffa' : '📌 Post-it'}</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">📌 Post-it</span>
           </div>
-          <p class="whitespace-pre-wrap leading-relaxed text-sm">${escapeHtml(review.review_text)}</p>
-          ${contactInfo}
-          ${ownerActions}
+          <p class="text-sm leading-relaxed text-slate-300 review-text-content">${shortText}</p>
+          ${isLong ? '<span class="text-xs text-indigo-400 font-medium mt-1 inline-block toggle-hint">Klicka för att läsa mer ▼</span>' : ''}
+          <div class="review-extra-info hidden">
+            ${contactInfo}
+            ${ownerActions}
+          </div>
         `;
+
+        let expanded = false;
+        reviewCard.addEventListener('click', () => {
+          expanded = !expanded;
+          const textEl = reviewCard.querySelector('.review-text-content');
+          const hintEl = reviewCard.querySelector('.toggle-hint');
+          const extraEl = reviewCard.querySelector('.review-extra-info');
+
+          if (expanded) {
+            textEl.innerText = review.review_text;
+            if (hintEl) hintEl.innerText = 'Klicka för att dölja ▲';
+            extraEl.classList.remove('hidden');
+            reviewCard.classList.add('bg-slate-800/90', 'border-indigo-500/40');
+          } else {
+            textEl.innerText = shortText;
+            if (hintEl) hintEl.innerText = 'Klicka för att läsa mer ▼';
+            extraEl.classList.add('hidden');
+            reviewCard.classList.remove('bg-slate-800/90', 'border-indigo-500/40');
+          }
+        });
+
         reviewsList.appendChild(reviewCard);
       });
 
@@ -593,7 +615,6 @@
 
       const rawLocation = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
-      const hasCouch = document.getElementById('couch-check').checked;
 
       if (!rawLocation || !review) return alert('Fyll i både plats och din Post-it!');
       if (review.length > 1000) return alert('Post-it får max vara 1 000 tecken!');
@@ -628,7 +649,7 @@
           location_name: normalizedLocation,
           display_name: displayName,
           review_text: review,
-          has_couch: hasCouch,
+          has_couch: false,
           lat: lat,
           lng: lng,
           updated_at: new Date()
