@@ -107,7 +107,7 @@
 
   <script>
     // =================================================================
-    // 1. SUPABASE KONFIGURATION (Ersätt med dina egna nycklar från Supabase)
+    // 1. SUPABASE KONFIGURATION (Klistra in dina nycklar från Supabase)
     // =================================================================
     const SUPABASE_URL = 'https://uzadvxbtgrkmuagjtkfr.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
@@ -121,21 +121,19 @@
     }
 
     // =================================================================
-    // 2. KARTA OCH INIT (Med ÄKTA Mörk Karta)
+    // 2. KARTA OCH INIT (Esri Dark Gray - Helt fri från API-nycklar)
     // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      // Initiera Leaflet med mjuk pan/zoom
       map = L.map('map', { 
         zoomControl: false,
         worldCopyJump: true
       }).setView([20, 0], 2);
       
-      // Äkta Mörk Kart-tile från CartoDB (Inga CSS-filter som spökar!)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
+      // Stabil mörk kartkälla från Esri uten krav på nyckel
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 16,
         minZoom: 2,
-        subdomains: 'abcd',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
       }).addTo(map);
 
       setTimeout(() => { map.invalidateSize(); }, 200);
