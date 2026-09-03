@@ -165,7 +165,14 @@
 
     async function loginWithGoogle() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
-      const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+      
+      const { error } = await supabaseClient.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+          redirectTo: 'https://jstihl.github.io/vistme/'
+        }
+      });
+      
       if (error) alert('Inloggning misslyckades: ' + error.message);
     }
 
