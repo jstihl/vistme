@@ -126,7 +126,7 @@
     }
 
     // =================================================================
-    // 2. KARTA OCH INIT (Esri Street Map — Engelsk text, Noll nyckelkrav)
+    // 2. KARTA OCH INIT (Spärrad zoom så inga okända tecken visas)
     // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
       const southWest = L.latLng(-85, -180);
@@ -140,9 +140,10 @@
         bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
-      // Esri World Street Map — Fri från API-nycklar och med engelska ortnamn globalt
+      // Esri World Street Map med maxNativeZoom för att förhindra teckenfel vid djup zoom
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19,
+        maxZoom: 17,
+        maxNativeZoom: 15, // Förstorar bilderna mjukt istället för att leta efter obefintlig lokal text
         minZoom: 2,
         attribution: 'Tiles &copy; Esri'
       }).addTo(map);
