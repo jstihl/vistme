@@ -35,6 +35,11 @@
       background: #0f172a;
     }
 
+    /* Mörkar ner Wikimedia-kartan utan prestandaproblem */
+    .leaflet-tile-pane {
+      filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+    }
+
     /* Bottom Sheet animation för mobil */
     .sheet-transition { 
       transition: transform 0.3s ease-in-out; 
@@ -109,22 +114,21 @@
     // =================================================================
     // 1. SUPABASE KONFIGURATION (Klistra in dina nycklar från Supabase)
     // =================================================================
-    const SUPABASE_URL = 'https://uzadvxbtgrkmuagjtkfr.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
+    const SUPABASE_URL = 'https://DIN-SUPABASE-URL.supabase.co';
+    const SUPABASE_ANON_KEY = 'DIN-SUPABASE-ANON-KEY';
     
     let supabaseClient = null;
     let map = null;
     let currentUser = null;
 
-    if (SUPABASE_URL !== 'https://uzadvxbtgrkmuagjtkfr.supabase.co') {
+    if (SUPABASE_URL !== 'https://DIN-SUPABASE-URL.supabase.co') {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     // =================================================================
-    // 2. KARTA OCH INIT (Låst, supersmidig & täcker hela skärmen)
+    // 2. KARTA OCH INIT (OpenStreetMap - 100% Öppen utan nycklar)
     // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      // Sätt gränser så man inte kan dras utanför världen
       const southWest = L.latLng(-85, -180);
       const northEast = L.latLng(85, 180);
       const bounds = L.latLngBounds(southWest, northEast);
@@ -132,16 +136,15 @@
       map = L.map('map', { 
         zoomControl: false,
         maxBounds: bounds,
-        maxBoundsViscosity: 1.0, // Förhindrar att kartan dras ur bild
+        maxBoundsViscosity: 1.0,
         bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
-      // Stabil och extremt snabb mörk raster-tile från CartoCDN
-      L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 18,
+      // Helt öppen OpenStreetMap-källa utan krav på API-nycklar
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
         minZoom: 2,
-        subdomains: 'abcd',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
       setTimeout(() => { map.invalidateSize(); }, 100);
