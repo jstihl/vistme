@@ -112,22 +112,21 @@
 
   <script>
     // =================================================================
-    // 1. SUPABASE KONFIGURATION (Klistra in dina nycklar från Supabase)
+    // 1. SUPABASE KONFIGURATION
     // =================================================================
     const SUPABASE_URL = 'https://uzadvxbtgrkmuagjtkfr.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi
-';
+    const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
     
     let supabaseClient = null;
     let map = null;
     let currentUser = null;
 
-    if (SUPABASE_URL !== 'https://uzadvxbtgrkmuagjtkfr.supabase.co') {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     // =================================================================
-    // 2. KARTA OCH INIT (Spärrad zoom så inga okända tecken visas)
+    // 2. KARTA OCH INIT
     // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
       const southWest = L.latLng(-85, -180);
@@ -141,10 +140,9 @@
         bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
-      // Esri World Street Map med maxNativeZoom för att förhindra teckenfel vid djup zoom
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 17,
-        maxNativeZoom: 15, // Förstorar bilderna mjukt istället för att leta efter obefintlig lokal text
+        maxNativeZoom: 15,
         minZoom: 2,
         attribution: 'Tiles &copy; Esri'
       }).addTo(map);
@@ -166,7 +164,7 @@
     }
 
     async function loginWithGoogle() {
-      if (!supabaseClient) return alert('Ersätt SUPABASE_URL och SUPABASE_ANON_KEY i koden först!');
+      if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
       const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
       if (error) alert('Inloggning misslyckades: ' + error.message);
     }
@@ -194,7 +192,7 @@
       pins.forEach(pin => {
         if (pin.lat && pin.lng) {
           const marker = L.marker([pin.lat, pin.lng]).addTo(map);
-          marker.on('click', () => showReviewsForLocation(pin.location_name));
+          marker.on('click', () => alert(pin.location_name + ': ' + pin.review_text));
         }
       });
     }
@@ -221,10 +219,11 @@
     }
 
     // =================================================================
-    // 6. SPARA NÅL (UPSERT)
+    // 6. SPARA NÅL (MED GEOKODNING & SUPABASE RLS)
     // =================================================================
     async function savePin() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
+      if (!currentUser) return loginWithGoogle();
 
       const location = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
@@ -232,20 +231,50 @@
 
       if (!location || !review) return alert('Fyll i både plats och review!');
 
-      const { error } = await supabaseClient.from('user_pins').upsert({
-        user_id: currentUser.id,
-        location_name: location,
-        review_text: review,
-        has_couch: hasCouch,
-        updated_at: new Date()
-      }, { onConflict: 'user_id, location_name' });
+      const saveBtn = document.querySelector('#pin-form button[onclick="savePin()"]');
+      const originalText = saveBtn.innerText;
+      saveBtn.innerText = 'Letar koordinater...';
+      saveBtn.disabled = true;
 
-      if (error) {
-        alert('Ett fel uppstod: ' + error.message);
-      } else {
-        alert('Din nål/review har sparats!');
-        closeBottomSheet();
-        loadPins();
+      try {
+        // Hämta lat/lng automatiskt via OpenStreetMaps Nominatim API
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+        const geoData = await geoRes.json();
+
+        if (!geoData || geoData.length === 0) {
+          alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Lissabon, Portugal").');
+          saveBtn.innerText = originalText;
+          saveBtn.disabled = false;
+          return;
+        }
+
+        const lat = parseFloat(geoData[0].lat);
+        const lng = parseFloat(geoData[0].lon);
+
+        const { error } = await supabaseClient.from('user_pins').upsert({
+          user_id: currentUser.id,
+          location_name: location,
+          review_text: review,
+          has_couch: hasCouch,
+          lat: lat,
+          lng: lng,
+          updated_at: new Date()
+        }, { onConflict: 'user_id, location_name' });
+
+        if (error) {
+          alert('Ett fel uppstod: ' + error.message);
+        } else {
+          alert('Din nål har sparats!');
+          closeBottomSheet();
+          loadPins();
+          map.setView([lat, lng], 6);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Ett nätverksfel uppstod.');
+      } finally {
+        saveBtn.innerText = originalText;
+        saveBtn.disabled = false;
       }
     }
   </script>
