@@ -120,30 +120,38 @@
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    // =================================================================
-    // 2. KARTA OCH INIT (Esri Dark Gray - Helt fri från API-nycklar)
+   // =================================================================
+    // 2. KARTA OCH INIT (Låst och super-smooth)
     // =================================================================
     window.addEventListener('DOMContentLoaded', () => {
+      // Sätt max-gränser så man inte kan panorera utanför världskartan
+      const southWest = L.latLng(-85, -180);
+      const northEast = L.latLng(85, 180);
+      const bounds = L.latLngBounds(southWest, northEast);
+
       map = L.map('map', { 
         zoomControl: false,
-        worldCopyJump: true
+        maxBounds: bounds,
+        maxBoundsViscosity: 1.0, // Tvingar kartan att stanna inom världen
+        bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
-      // Stabil mörk kartkälla från Esri uten krav på nyckel
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 16,
+      // Snygg, fri och stabil mörk kartkälla som täcker hela skärmen
+      L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18,
         minZoom: 2,
-        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+        subdomains: 'abcd',
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
       }).addTo(map);
 
-      setTimeout(() => { map.invalidateSize(); }, 200);
+      // Tvinga omritning vid start
+      setTimeout(() => { map.invalidateSize(); }, 100);
 
       if (supabaseClient) {
         checkUserSession();
         loadPins();
       }
     });
-
     // =================================================================
     // 3. AUTHENTICATION (GOOGLE)
     // =================================================================
