@@ -631,7 +631,7 @@
         const geoData = await geoRes.json();
 
         if (!geoData || geoData.length === 0) {
-          alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Larnaca").');
+          alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Bangkok").');
           saveBtn.innerText = originalText;
           saveBtn.disabled = false;
           return;
@@ -643,6 +643,13 @@
         const displayName = (geoData[0].display_name) 
           ? geoData[0].display_name.split(',')[0] 
           : rawLocation;
+
+        // Rensa bort gamla felstavade inlägg/byten för samma användare så de inte ligger kvar på fel ställen
+        await supabaseClient
+          .from('user_pins')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .neq('location_name', normalizedLocation);
 
         const { error } = await supabaseClient.from('user_pins').upsert({
           user_id: currentUser.id,
