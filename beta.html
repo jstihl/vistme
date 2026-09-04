@@ -49,6 +49,18 @@
       transform: scale(1.05);
       pointer-events: none;
     }
+
+    /* Post-it Note Modal Style */
+    .postit-note {
+      background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+      color: #1e293b;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+      transform: rotate(-1deg);
+      transition: transform 0.3s ease;
+    }
+    .postit-note:hover {
+      transform: rotate(0deg) scale(1.01);
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-full w-full relative">
@@ -56,8 +68,6 @@
   <!-- Intro Splash Screen -->
   <div id="intro-splash" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="bg-slate-900/80 border border-slate-800/80 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6 relative overflow-hidden">
-      
-      <!-- Dekorativ glöd -->
       <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -83,10 +93,36 @@
     </div>
   </div>
 
+  <!-- Post-it Modal för utloggade besökare -->
+  <div id="login-postit-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="postit-note relative w-full max-w-sm p-8 rounded-xl font-sans text-center space-y-5">
+      
+      <!-- Grön nål högst upp i mitten -->
+      <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 text-3xl filter drop-shadow-md select-none">
+        🟢
+      </div>
+
+      <div class="space-y-2 pt-2">
+        <h3 class="text-2xl font-black tracking-wide text-slate-900">Hoppsan!</h3>
+        <p class="text-slate-800 text-sm font-medium leading-relaxed">
+          Tyvärr så måste du vara inloggad för att läsa och dela Post-its på kartan! 🌍✨
+        </p>
+      </div>
+
+      <div class="space-y-2 pt-2">
+        <button onclick="loginWithGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition transform active:scale-95 cursor-pointer text-sm">
+          Logga in med Google
+        </button>
+        <button onclick="closeLoginPostIt()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-4 rounded-xl transition cursor-pointer text-xs">
+          Stäng
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Header / Top Bar -->
   <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl transition-all duration-300">
-    
-    <!-- Vänster sida: Logga + Mina Post-its-knapp -->
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-2">
         <span class="text-2xl">📌</span>
@@ -99,7 +135,6 @@
       </button>
     </div>
     
-    <!-- Höger sida: Inloggning / Profil / Villkor -->
     <div class="flex items-center gap-2">
       <button onclick="openTermsModal()" class="text-xs text-slate-400 hover:text-slate-200 underline cursor-pointer hidden md:inline">Villkor</button>
       
@@ -129,7 +164,6 @@
   <!-- Helskärms-modal för "Mina Post-its" -->
   <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
         <div>
           <h2 class="text-xl font-bold text-indigo-300">Dina aktiva Post-its</h2>
@@ -146,14 +180,12 @@
         <button onclick="openTermsModal()" class="text-xs text-slate-400 underline cursor-pointer">Terms of Use</button>
         <button onclick="closeMyPinsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Stäng</button>
       </div>
-
     </div>
   </div>
 
   <!-- Popup-modal för Skriv / Redigera Post-it -->
   <div id="pin-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-lg max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
-      
       <div class="flex justify-between items-center mb-4">
         <h2 id="form-title" class="text-xl font-bold text-indigo-300">Lägg till / Redigera din Post-it</h2>
         <button onclick="closePinModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
@@ -178,14 +210,12 @@
         <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer text-sm shadow-lg">Spara Post-it</button>
         <button onclick="closePinModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer text-sm">Avbryt</button>
       </div>
-
     </div>
   </div>
 
   <!-- Popup-modal för Profil -->
   <div id="profile-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
-      
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-indigo-300">Din Profil</h2>
         <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
@@ -214,14 +244,12 @@
         <button onclick="saveProfile()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer text-sm shadow-lg">Spara Profil</button>
         <button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer text-sm">Stäng</button>
       </div>
-
     </div>
   </div>
 
   <!-- Popup-modal för platsdetaljer / flöde -->
   <div id="location-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
         <div>
           <h2 id="location-modal-title" class="text-xl font-bold text-indigo-300">Plats</h2>
@@ -237,7 +265,6 @@
       <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
         <button onclick="closeLocationModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Stäng</button>
       </div>
-
     </div>
   </div>
 
@@ -335,6 +362,14 @@
       }, 600);
     }
 
+    function openLoginPostIt() {
+      document.getElementById('login-postit-modal').classList.remove('hidden');
+    }
+
+    function closeLoginPostIt() {
+      document.getElementById('login-postit-modal').classList.add('hidden');
+    }
+
     async function fetchUserProfile(userId) {
       const { data } = await supabaseClient
         .from('profiles')
@@ -407,10 +442,9 @@
       Object.values(locationsMap).forEach(loc => {
         const marker = L.marker([loc.lat, loc.lng]).addTo(markersLayer);
         marker.on('click', () => {
-          // Kollar om användaren är inloggad innan man får öppna nålen
           if (!currentUser) {
-            alert('Du behöver logga in med Google för att läsa och dela Post-its på kartan!');
-            return loginWithGoogle();
+            openLoginPostIt();
+            return;
           }
           showLocationDetails(loc);
         });
@@ -419,8 +453,8 @@
 
     function openPinModal() {
       if (!currentUser) {
-        alert('Du behöver logga in för att skriva en Post-it!');
-        return loginWithGoogle();
+        openLoginPostIt();
+        return;
       }
       editingPinId = null;
       document.getElementById('location-input').value = '';
@@ -435,8 +469,8 @@
 
     function openProfileModal() {
       if (!currentUser) {
-        alert('Du behöver logga in för att se din profil!');
-        return loginWithGoogle();
+        openLoginPostIt();
+        return;
       }
       if (userAvatarUrl) {
         document.getElementById('profile-modal-avatar').src = userAvatarUrl;
@@ -477,8 +511,8 @@
 
     async function openMyPinsModal() {
       if (!currentUser) {
-        alert('Du behöver logga in för att se dina Post-its!');
-        return loginWithGoogle();
+        openLoginPostIt();
+        return;
       }
       document.getElementById('mypins-modal').classList.remove('hidden');
       await loadMyPinsList();
@@ -707,7 +741,10 @@
 
     async function savePin() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
-      if (!currentUser) return loginWithGoogle();
+      if (!currentUser) {
+        openLoginPostIt();
+        return;
+      }
 
       const rawLocation = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
