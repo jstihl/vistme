@@ -37,13 +37,54 @@
 
     .leaflet-tile-pane {
       filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8);
+      transition: filter 0.3s ease;
+    }
+
+    /* Intro Splash Animation */
+    #intro-splash {
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    #intro-splash.fade-out {
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none;
     }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-full w-full relative">
 
+  <!-- Intro Splash Screen -->
+  <div id="intro-splash" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="bg-slate-900/80 border border-slate-800/80 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6 relative overflow-hidden">
+      
+      <!-- Dekorativ glöd -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="inline-flex p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-4xl shadow-inner">
+        📌
+      </div>
+
+      <div class="space-y-2">
+        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-sky-300 to-cyan-400 bg-clip-text text-transparent">
+          VistMe
+        </h1>
+        <p class="text-xs font-medium uppercase tracking-widest text-indigo-400/80">Resenärernas Twitter</p>
+        <p class="text-sm text-slate-300 pt-2 leading-relaxed">
+          Dela tillfälliga tips, upptäck platser och sätt dina egna Post-its på världskartan. Färskvara som lever i 14 dagar.
+        </p>
+      </div>
+
+      <button onclick="closeIntroSplash()" class="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg transition transform active:scale-95 cursor-pointer text-sm">
+        Utforska kartan 🚀
+      </button>
+
+      <p class="text-[10px] text-slate-500">Beta v1.0 • Skapad av resetwitters för resetwitters</p>
+    </div>
+  </div>
+
   <!-- Header / Top Bar -->
-  <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl">
+  <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl transition-all duration-300">
     
     <!-- Vänster sida: Logga + Mina Post-its-knapp -->
     <div class="flex items-center gap-3">
@@ -86,7 +127,7 @@
   </button>
 
   <!-- Helskärms-modal för "Mina Post-its" -->
-  <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+  <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
@@ -239,7 +280,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Sätter minZoom till 3 så kartan fyller skärmen och de gråa kanterna försvinner
       map = L.map('map', { 
         zoomControl: false,
         bounceAtZoomLimits: false,
@@ -255,7 +295,10 @@
       }).addTo(map);
 
       markersLayer = L.layerGroup().addTo(map);
-      setTimeout(() => { map.invalidateSize(); }, 100);
+      
+      setTimeout(() => { 
+        map.invalidateSize(); 
+      }, 150);
 
       if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -282,6 +325,16 @@
         loadPins();
       }
     });
+
+    function closeIntroSplash() {
+      const splash = document.getElementById('intro-splash');
+      splash.classList.add('fade-out');
+      // Ta bort elementet från koden när animationen är klar
+      setTimeout(() => {
+        splash.style.display = 'none';
+        map.invalidateSize();
+      }, 600);
+    }
 
     async function fetchUserProfile(userId) {
       const { data } = await supabaseClient
@@ -408,11 +461,6 @@
       document.getElementById('image-modal').classList.add('hidden');
     }
 
-    function openTermsModal() {
-      document.getElementById('terms-modal').classList.add('hidden'); // wait, open should remove hidden
-    }
-
-    // Fix terms modal open helper just in case
     function openTermsModal() {
       document.getElementById('terms-modal').classList.remove('hidden');
     }
@@ -636,7 +684,7 @@
         reviewsList.appendChild(reviewCard);
       });
 
-      document.getElementById('location-modal').classList.remove('hidden');
+      document.getElementById('location-modal').classList.add('hidden');
     }
 
     function updateCharCount() {
