@@ -239,19 +239,18 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Skapa kartan med maxBounds så man inte kan scrolla runt i oändliga kopior i sidled
+      // Skapa kartan rent och snyggt utan låsta maxBounds som kraschar sidorna
       map = L.map('map', { 
         zoomControl: false,
-        bounceAtZoomLimits: false,
-        maxBounds: [[-85, -180], [85, 180]], // Stänger in kartan till riktiga jorden
-        maxBoundsViscosity: 1.0
+        bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
+      // Använd noWrap på tileLayer så den inte loopar runt i oändlighet i sidled
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 17,
         maxNativeZoom: 15,
         minZoom: 2,
-        noWrap: true, // Förhindrar att kartan loopar i sidled
+        noWrap: true, 
         attribution: 'Tiles &copy; Esri'
       }).addTo(map);
 
