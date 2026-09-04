@@ -232,7 +232,7 @@
     let markersLayer = null;
     let userProfile = null;
     let userAvatarUrl = '';
-    let editingPinId = null; // Håll koll på ID:t för inlägget som redigeras
+    let editingPinId = null;
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -360,7 +360,7 @@
         alert('Du behöver logga in för att skriva en Post-it!');
         return loginWithGoogle();
       }
-      editingPinId = null; // Ny post
+      editingPinId = null;
       document.getElementById('location-input').value = '';
       document.getElementById('review-input').value = '';
       updateCharCount();
@@ -477,7 +477,7 @@
     }
 
     function editPin(pinId, text, displayName) {
-      editingPinId = pinId; // Spara inläggets unika ID
+      editingPinId = pinId;
       document.getElementById('location-input').value = displayName;
       document.getElementById('review-input').value = text;
       updateCharCount();
@@ -631,10 +631,8 @@
       saveBtn.disabled = true;
 
       try {
-        const geoRes =- await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
-        // Fixa fetch-anropet rent
-        const realGeoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
-        const geoData = await realGeoRes.json();
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
+        const geoData = await geoRes.json();
 
         if (!geoData || geoData.length === 0) {
           alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Bangkok").');
@@ -650,39 +648,44 @@
           ? geoData[0].display_name.split(',')[0] 
           : rawLocation;
 
-        let query = supabaseClient.from('user_pins');
         let result;
 
         if (editingPinId) {
           // Uppdatera befintligt inlägg via ID
-          result = await query.update({
-            location_name: normalizedLocation,
-            display_name: displayName,
-            review_text: review,
-            has_couch: false,
-            lat: lat,
-            lng: lng,
-            updated_at: new Date()
-          }).eq('id', editingPinId).eq('user_id', currentUser.id);
+          result = await supabaseClient
+            .from('user_pins')
+            .update({
+              location_name: normalizedLocation,
+              display_name: displayName,
+              review_text: review,
+              has_couch: false,
+              lat: lat,
+              lng: lng,
+              updated_at: new Date()
+            })
+            .eq('id', editingPinId)
+            .eq('user_id', currentUser.id);
         } else {
           // Skapa nytt inlägg
-          result = await query.insert({
-            user_id: currentUser.id,
-            location_name: normalizedLocation,
-            display_name: displayName,
-            review_text: review,
-            has_couch: false,
-            lat: lat,
-            lng: lng,
-            updated_at: new Date()
-          });
+          result = await supabaseClient
+            .from('user_pins')
+            .insert({
+              user_id: currentUser.id,
+              location_name: normalizedLocation,
+              display_name: displayName,
+              review_text: review,
+              has_couch: false,
+              lat: lat,
+              lng: lng,
+              updated_at: new Date()
+            });
         }
 
         if (result.error) {
           alert('Ett fel uppstod: ' + result.error.message);
         } else {
           alert('Din Post-it har sparats!');
-          editingPinId = null; // Nollställ
+          editingPinId = null;
           closePinModal();
           loadPins();
           map.setView([lat, lng], 6);
