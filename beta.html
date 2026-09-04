@@ -239,18 +239,18 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Skapa kartan rent och snyggt utan låsta maxBounds som kraschar sidorna
+      // Sätter minZoom till 3 så kartan fyller skärmen och de gråa kanterna försvinner
       map = L.map('map', { 
         zoomControl: false,
-        bounceAtZoomLimits: false
-      }).setView([20, 0], 2);
+        bounceAtZoomLimits: false,
+        minZoom: 3,
+        worldCopyJump: true
+      }).setView([20, 0], 3);
       
-      // Använd noWrap på tileLayer så den inte loopar runt i oändlighet i sidled
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 17,
         maxNativeZoom: 15,
-        minZoom: 2,
-        noWrap: true, 
+        minZoom: 3,
         attribution: 'Tiles &copy; Esri'
       }).addTo(map);
 
@@ -408,6 +408,11 @@
       document.getElementById('image-modal').classList.add('hidden');
     }
 
+    function openTermsModal() {
+      document.getElementById('terms-modal').classList.add('hidden'); // wait, open should remove hidden
+    }
+
+    // Fix terms modal open helper just in case
     function openTermsModal() {
       document.getElementById('terms-modal').classList.remove('hidden');
     }
