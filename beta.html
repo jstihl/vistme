@@ -50,11 +50,12 @@
       pointer-events: none;
     }
 
-    /* Post-it Note Modal Style med djupare skuggor */
+    /* Post-it Note Modal med kraftig skugga och tydlig kontrast mot mörk bakgrund */
     .postit-note {
-      background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
-      color: #1e293b;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 15px rgba(253, 224, 71, 0.15);
+      background: linear-gradient(135deg, #fef08a 0%, #facc15 100%);
+      color: #0f172a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(253, 224, 71, 0.3);
+      border: 1px solid rgba(202, 138, 4, 0.4);
       transform: rotate(-1.5deg);
       transition: transform 0.3s ease;
     }
@@ -93,27 +94,27 @@
     </div>
   </div>
 
-  <!-- Post-it Modal för utloggade besökare -->
-  <div id="login-postit-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+  <!-- Post-it Modal för utloggade besökare med mjukare, varmare bakgrundsskugga -->
+  <div id="login-postit-modal" class="fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="postit-note relative w-full max-w-sm p-8 rounded-xl font-sans text-center space-y-5">
       
-      <!-- Grön nål med skugga högst upp i mitten -->
-      <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 text-3xl filter drop-shadow-[0_8px_8px_rgba(0,0,0,0.4)] select-none">
+      <!-- Grön nål med kraftig skugga -->
+      <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 text-3xl filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] select-none">
         🟢
       </div>
 
       <div class="space-y-2 pt-2">
         <h3 class="text-2xl font-black tracking-wide text-slate-950">Hoppsan!</h3>
-        <p class="text-slate-900 text-sm font-semibold leading-relaxed">
+        <p class="text-slate-900 text-sm font-bold leading-relaxed">
           Tyvärr så måste du vara inloggad för att läsa och dela Post-its på kartan! 🌍✨
         </p>
       </div>
 
       <div class="space-y-2 pt-2">
-        <button onclick="loginWithGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer text-sm">
+        <button onclick="loginWithGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-xl transition transform active:scale-95 cursor-pointer text-sm">
           Logga in med Google
         </button>
-        <button onclick="closeLoginPostIt()" class="w-full bg-amber-300/60 hover:bg-amber-300 text-slate-800 font-semibold py-2.5 px-4 rounded-xl transition cursor-pointer text-xs">
+        <button onclick="closeLoginPostIt()" class="w-full bg-amber-200/80 hover:bg-amber-300 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition cursor-pointer text-xs">
           Stäng
         </button>
       </div>
