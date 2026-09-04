@@ -232,6 +232,7 @@
     let markersLayer = null;
     let userProfile = null;
     let userAvatarUrl = '';
+    let editingPinId = null; // Håll koll på ID:t för inlägget som redigeras
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -359,6 +360,7 @@
         alert('Du behöver logga in för att skriva en Post-it!');
         return loginWithGoogle();
       }
+      editingPinId = null; // Ny post
       document.getElementById('location-input').value = '';
       document.getElementById('review-input').value = '';
       updateCharCount();
@@ -465,30 +467,31 @@
           </div>
           <p class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed mb-3">${escapeHtml(pin.review_text)}</p>
           <div class="flex gap-4 text-xs pt-3 border-t border-slate-700/50">
-            <button onclick="closeMyPinsModal(); editPinFromMyPins('${pin.location_name}', '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+            <button onclick="closeMyPinsModal(); closeLocationModal(); editPin(${pin.id}, '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
             <span class="text-slate-600">|</span>
-            <button onclick="deletePinFromMyPins('${pin.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+            <button onclick="deletePin(${pin.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    function editPinFromMyPins(locationName, text, displayName) {
+    function editPin(pinId, text, displayName) {
+      editingPinId = pinId; // Spara inläggets unika ID
       document.getElementById('location-input').value = displayName;
       document.getElementById('review-input').value = text;
       updateCharCount();
       document.getElementById('pin-modal').classList.remove('hidden');
     }
 
-    async function deletePinFromMyPins(locationName) {
+    async function deletePin(pinId) {
       if (!confirm('Är du säker på att du vill radera denna Post-it?')) return;
 
       const { error } = await supabaseClient
         .from('user_pins')
         .delete()
-        .eq('user_id', currentUser.id)
-        .eq('location_name', locationName);
+        .eq('id', pinId)
+        .eq('user_id', currentUser.id);
 
       if (error) {
         alert('Kunde inte radera: ' + error.message);
@@ -496,6 +499,7 @@
         alert('Post-it har raderats.');
         loadMyPinsList();
         loadPins();
+        closeLocationModal();
       }
     }
 
@@ -548,9 +552,9 @@
         if (isOwner) {
           ownerActions = `
             <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs" onclick="event.stopPropagation()">
-              <button onclick="closeLocationModal(); editPinFromMyPins('${review.location_name}', '${escapeHtml(review.review_text).replace(/'/g, "\\'")}', '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+              <button onclick="closeLocationModal(); editPin(${review.id}, '${escapeHtml(review.review_text).replace(/'/g, "\\'")}', '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
               <span class="text-slate-600">|</span>
-              <button onclick="deletePinFromMyPins('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+              <button onclick="deletePin(${review.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
             </div>
           `;
         }
@@ -627,8 +631,10 @@
       saveBtn.disabled = true;
 
       try {
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
-        const geoData = await geoRes.json();
+        const geoRes =- await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
+        // Fixa fetch-anropet rent
+        const realGeoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
+        const geoData = await realGeoRes.json();
 
         if (!geoData || geoData.length === 0) {
           alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Bangkok").');
@@ -644,28 +650,39 @@
           ? geoData[0].display_name.split(',')[0] 
           : rawLocation;
 
-        // Rensa bort gamla felstavade inlägg/byten för samma användare så de inte ligger kvar på fel ställen
-        await supabaseClient
-          .from('user_pins')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .neq('location_name', normalizedLocation);
+        let query = supabaseClient.from('user_pins');
+        let result;
 
-        const { error } = await supabaseClient.from('user_pins').upsert({
-          user_id: currentUser.id,
-          location_name: normalizedLocation,
-          display_name: displayName,
-          review_text: review,
-          has_couch: false,
-          lat: lat,
-          lng: lng,
-          updated_at: new Date()
-        }, { onConflict: 'user_id, location_name' });
+        if (editingPinId) {
+          // Uppdatera befintligt inlägg via ID
+          result = await query.update({
+            location_name: normalizedLocation,
+            display_name: displayName,
+            review_text: review,
+            has_couch: false,
+            lat: lat,
+            lng: lng,
+            updated_at: new Date()
+          }).eq('id', editingPinId).eq('user_id', currentUser.id);
+        } else {
+          // Skapa nytt inlägg
+          result = await query.insert({
+            user_id: currentUser.id,
+            location_name: normalizedLocation,
+            display_name: displayName,
+            review_text: review,
+            has_couch: false,
+            lat: lat,
+            lng: lng,
+            updated_at: new Date()
+          });
+        }
 
-        if (error) {
-          alert('Ett fel uppstod: ' + error.message);
+        if (result.error) {
+          alert('Ett fel uppstod: ' + result.error.message);
         } else {
           alert('Din Post-it har sparats!');
+          editingPinId = null; // Nollställ
           closePinModal();
           loadPins();
           map.setView([lat, lng], 6);
