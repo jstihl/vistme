@@ -50,12 +50,12 @@
       pointer-events: none;
     }
 
-    /* Post-it Note Modal Style */
+    /* Post-it Note Modal Style med djupare skuggor */
     .postit-note {
       background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
       color: #1e293b;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-      transform: rotate(-1deg);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 15px rgba(253, 224, 71, 0.15);
+      transform: rotate(-1.5deg);
       transition: transform 0.3s ease;
     }
     .postit-note:hover {
@@ -97,23 +97,23 @@
   <div id="login-postit-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="postit-note relative w-full max-w-sm p-8 rounded-xl font-sans text-center space-y-5">
       
-      <!-- Grön nål högst upp i mitten -->
-      <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 text-3xl filter drop-shadow-md select-none">
+      <!-- Grön nål med skugga högst upp i mitten -->
+      <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 text-3xl filter drop-shadow-[0_8px_8px_rgba(0,0,0,0.4)] select-none">
         🟢
       </div>
 
       <div class="space-y-2 pt-2">
-        <h3 class="text-2xl font-black tracking-wide text-slate-900">Hoppsan!</h3>
-        <p class="text-slate-800 text-sm font-medium leading-relaxed">
+        <h3 class="text-2xl font-black tracking-wide text-slate-950">Hoppsan!</h3>
+        <p class="text-slate-900 text-sm font-semibold leading-relaxed">
           Tyvärr så måste du vara inloggad för att läsa och dela Post-its på kartan! 🌍✨
         </p>
       </div>
 
       <div class="space-y-2 pt-2">
-        <button onclick="loginWithGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition transform active:scale-95 cursor-pointer text-sm">
+        <button onclick="loginWithGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer text-sm">
           Logga in med Google
         </button>
-        <button onclick="closeLoginPostIt()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-4 rounded-xl transition cursor-pointer text-xs">
+        <button onclick="closeLoginPostIt()" class="w-full bg-amber-300/60 hover:bg-amber-300 text-slate-800 font-semibold py-2.5 px-4 rounded-xl transition cursor-pointer text-xs">
           Stäng
         </button>
       </div>
