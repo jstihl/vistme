@@ -459,19 +459,49 @@
       container.innerHTML = '';
       pins.forEach(pin => {
         const card = document.createElement('div');
-        card.className = 'bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 text-slate-200 text-sm relative';
+        card.className = 'bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 text-slate-200 text-sm relative cursor-pointer hover:border-indigo-500/50 transition';
+        
+        const fullText = escapeHtml(pin.review_text);
+        const words = fullText.split(/\s+/);
+        const isLong = words.length > 10;
+        const shortText = isLong ? words.slice(0, 10).join(' ') + '...' : fullText;
+
         card.innerHTML = `
           <div class="flex justify-between items-center mb-2">
             <span class="font-bold text-base text-indigo-300">${escapeHtml(pin.display_name)}</span>
             <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-500/30">📌 Post-it</span>
           </div>
-          <p class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed mb-3">${escapeHtml(pin.review_text)}</p>
-          <div class="flex gap-4 text-xs pt-3 border-t border-slate-700/50">
-            <button onclick="closeMyPinsModal(); closeLocationModal(); editPin(${pin.id}, '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
-            <span class="text-slate-600">|</span>
-            <button onclick="deletePin(${pin.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+          <p class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed mb-2 mypins-text-content">${shortText}</p>
+          ${isLong ? '<span class="text-xs text-indigo-400 font-medium inline-block toggle-hint mb-3">Klicka för att läsa mer ▼</span>' : ''}
+          <div class="mypins-extra-info hidden">
+            <div class="flex gap-4 text-xs pt-3 border-t border-slate-700/50" onclick="event.stopPropagation()">
+              <button onclick="closeMyPinsModal(); closeLocationModal(); editPin(${pin.id}, '${escapeHtml(pin.review_text).replace(/'/g, "\\'")}', '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+              <span class="text-slate-600">|</span>
+              <button onclick="deletePin(${pin.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+            </div>
           </div>
         `;
+
+        let expanded = false;
+        card.addEventListener('click', () => {
+          expanded = !expanded;
+          const textEl = card.querySelector('.mypins-text-content');
+          const hintEl = card.querySelector('.toggle-hint');
+          const extraEl = card.querySelector('.mypins-extra-info');
+
+          if (expanded) {
+            textEl.innerText = pin.review_text;
+            if (hintEl) hintEl.innerText = 'Klicka för att dölja ▲';
+            extraEl.classList.remove('hidden');
+            card.classList.add('bg-slate-800/90', 'border-indigo-500/40');
+          } else {
+            textEl.innerText = shortText;
+            if (hintEl) hintEl.innerText = 'Klicka för att läsa mer ▼';
+            extraEl.classList.add('hidden');
+            card.classList.remove('bg-slate-800/90', 'border-indigo-500/40');
+          }
+        });
+
         container.appendChild(card);
       });
     }
@@ -634,6 +664,8 @@
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
         const geoData = await geoRes.json();
 
+        if (!geoData || geoData.length === 50) { // säkerställ att geoData har träff
+        }
         if (!geoData || geoData.length === 0) {
           alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Bangkok").');
           saveBtn.innerText = originalText;
@@ -651,7 +683,6 @@
         let result;
 
         if (editingPinId) {
-          // Uppdatera befintligt inlägg via ID
           result = await supabaseClient
             .from('user_pins')
             .update({
@@ -666,7 +697,6 @@
             .eq('id', editingPinId)
             .eq('user_id', currentUser.id);
         } else {
-          // Skapa nytt inlägg
           result = await supabaseClient
             .from('user_pins')
             .insert({
