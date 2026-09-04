@@ -71,7 +71,7 @@
         </h1>
         <p class="text-xs font-medium uppercase tracking-widest text-indigo-400/80">Resenärernas Twitter</p>
         <p class="text-sm text-slate-300 pt-2 leading-relaxed">
-          Dela tillfälliga tips, upptäck platser och sätt dina egna Post-its på världskartan. Färskvara som lever i 14 dagar.
+          Dela tillfälliga tips, upptäck platser och sätt dina egna Post-its på världskartan. Logga in för att ta del av gemenskapen!
         </p>
       </div>
 
@@ -329,7 +329,6 @@
     function closeIntroSplash() {
       const splash = document.getElementById('intro-splash');
       splash.classList.add('fade-out');
-      // Ta bort elementet från koden när animationen är klar
       setTimeout(() => {
         splash.style.display = 'none';
         map.invalidateSize();
@@ -407,7 +406,14 @@
 
       Object.values(locationsMap).forEach(loc => {
         const marker = L.marker([loc.lat, loc.lng]).addTo(markersLayer);
-        marker.on('click', () => showLocationDetails(loc));
+        marker.on('click', () => {
+          // Kollar om användaren är inloggad innan man får öppna nålen
+          if (!currentUser) {
+            alert('Du behöver logga in med Google för att läsa och dela Post-its på kartan!');
+            return loginWithGoogle();
+          }
+          showLocationDetails(loc);
+        });
       });
     }
 
@@ -684,7 +690,7 @@
         reviewsList.appendChild(reviewCard);
       });
 
-      document.getElementById('location-modal').classList.add('hidden');
+      document.getElementById('location-modal').classList.remove('hidden');
     }
 
     function updateCharCount() {
