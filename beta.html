@@ -664,8 +664,6 @@
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
         const geoData = await geoRes.json();
 
-        if (!geoData || geoData.length === 50) { // säkerställ att geoData har träff
-        }
         if (!geoData || geoData.length === 0) {
           alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Bangkok").');
           saveBtn.innerText = originalText;
