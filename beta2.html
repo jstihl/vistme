@@ -133,6 +133,12 @@
         <span>Mina Post-its</span>
       </button>
 
+      <!-- Admin-knapp (visas endast för admins) -->
+      <button id="admin-reports-btn" onclick="openAdminModal()" class="hidden text-xs bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/40 text-rose-200 px-3 py-2 rounded-xl font-medium transition flex items-center gap-1.5 cursor-pointer shadow-md">
+        <span>🚨</span>
+        <span>Granska anmälningar</span>
+      </button>
+
       <!-- Filter -->
       <div class="relative">
         <select id="user-filter-select" onchange="filterPinsByUser(this.value)" class="text-xs bg-slate-800/90 border border-slate-700 text-indigo-200 px-3 py-2 rounded-xl font-medium transition cursor-pointer focus:outline-none focus:border-indigo-500">
@@ -174,16 +180,34 @@
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
         <div>
           <h2 class="text-xl font-bold text-indigo-300">Dina aktiva Post-its</h2>
-          <p class="text-xs text-slate-400">Här ser du en komplett lista över dina inlägg (äldre än 14 dagar raderas automatiskt).</p>
+          <p class="text-xs text-slate-400">Här ser du en komplett lista över dina inlägg.</p>
         </div>
         <button onclick="closeMyPinsModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
       </div>
       <div id="mypins-list-container" class="p-6 overflow-y-auto space-y-4 flex-1">
         <p class="text-xs text-slate-500 italic">Hämtar dina inlägg...</p>
       </div>
-      <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-between items-center">
-        <button onclick="openTermsModal()" class="text-xs text-slate-400 underline cursor-pointer">Terms of Use</button>
+      <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
         <button onclick="closeMyPinsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Stäng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Reports Modal -->
+  <div id="admin-reports-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h2 class="text-xl font-bold text-rose-400">🚨 Anmälda inlägg</h2>
+          <p class="text-xs text-slate-400">Granska och vidta åtgärder mot rapporterat innehåll.</p>
+        </div>
+        <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
+      </div>
+      <div id="admin-reports-container" class="p-6 overflow-y-auto space-y-4 flex-1">
+        <p class="text-xs text-slate-500 italic">Hämtar anmälningar...</p>
+      </div>
+      <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+        <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Stäng</button>
       </div>
     </div>
   </div>
@@ -357,6 +381,7 @@
             userAvatarUrl = '';
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-profile').classList.add('hidden');
+            document.getElementById('admin-reports-btn').classList.add('hidden');
           }
         });
 
@@ -415,6 +440,12 @@
       
       if (data) {
         userProfile = data;
+        // Visa admin-knapp om användaren är admin eller super_admin
+        if (userProfile.role === 'admin' || userProfile.role === 'super_admin') {
+          document.getElementById('admin-reports-btn').classList.remove('hidden');
+        } else {
+          document.getElementById('admin-reports-btn').classList.add('hidden');
+        }
       }
     }
 
@@ -616,6 +647,112 @@
       document.getElementById('location-modal').classList.add('hidden');
     }
 
+    // Admin Reports Modal Hantering
+    async function openAdminModal() {
+      document.getElementById('admin-reports-modal').classList.remove('hidden');
+      await loadReportedPinsList();
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-reports-modal').classList.add('hidden');
+    }
+
+    async function loadReportedPinsList() {
+      const container = document.getElementById('admin-reports-container');
+      container.innerHTML = '<p class="text-xs text-slate-500 italic">Hämtar anmälda inlägg...</p>';
+
+      const { data: pins, error } = await supabaseClient
+        .from('user_pins')
+        .select('*')
+        .eq('is_reported', true)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        container.innerHTML = '<p class="text-xs text-rose-400">Kunde inte hämta anmälningar.</p>';
+        return;
+      }
+
+      if (!pins || pins.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-10">Inga anmälda inlägg för tillfället! Allt lugnt. 🌟</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      pins.forEach(pin => {
+        const author = allProfilesMap[pin.user_id] || { nickname: 'Anonym' };
+        const card = document.createElement('div');
+        card.className = 'bg-slate-800/80 border border-rose-500/30 rounded-2xl p-4 text-slate-200 text-sm relative';
+        
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold text-base text-rose-300">${escapeHtml(pin.display_name)}</span>
+            <span class="text-xs bg-rose-500/20 text-rose-300 px-2.5 py-0.5 rounded-full border border-rose-500/30">Anmält inlägg</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-2">Skrivet av: <strong>${escapeHtml(author.nickname)}</strong> den ${new Date(pin.updated_at).toLocaleDateString()}</p>
+          <div class="space-y-1 text-xs leading-relaxed bg-slate-900/50 p-3 rounded-xl border border-slate-700 mb-3">
+            ${pin.review_like ? `<div><strong class="text-indigo-400">👍:</strong> ${escapeHtml(pin.review_like)}</div>` : ''}
+            ${pin.review_dislike ? `<div><strong class="text-rose-400">👎:</strong> ${escapeHtml(pin.review_dislike)}</div>` : ''}
+            ${pin.review_recommend ? `<div><strong class="text-amber-400">⭐:</strong> ${escapeHtml(pin.review_recommend)}</div>` : ''}
+          </div>
+          <div class="flex gap-4 text-xs pt-2 border-t border-slate-700/50">
+            <button onclick="dismissReport(${pin.id})" class="text-emerald-400 hover:text-emerald-300 font-medium cursor-pointer">✅ Godkänn (Ta bort anmälan)</button>
+            <span class="text-slate-600">|</span>
+            <button onclick="deletePinAsAdmin(${pin.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">🗑️ Radera inlägget permanent</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function reportPin(pinId) {
+      if (!confirm('Vill du anmäla detta inlägg för olämpligt innehåll eller spam?')) return;
+
+      const { error } = await supabaseClient
+        .from('user_pins')
+        .update({ is_reported: true })
+        .eq('id', pinId);
+
+      if (error) {
+        alert('Kunde inte skicka anmälan.');
+      } else {
+        alert('Tack! Inlägget har anmälts till administratören.');
+        closeLocationModal();
+        loadPins();
+      }
+    }
+
+    async function dismissReport(pinId) {
+      const { error } = await supabaseClient
+        .from('user_pins')
+        .update({ is_reported: false })
+        .eq('id', pinId);
+
+      if (error) {
+        alert('Kunde inte uppdatera inlägget.');
+      } else {
+        alert('Anmälan har tagits bort och inlägget är rentvått.');
+        loadReportedPinsList();
+        loadPins();
+      }
+    }
+
+    async function deletePinAsAdmin(pinId) {
+      if (!confirm('Är du säker på att du vill radera detta inlägg som administratör?')) return;
+
+      const { error } = await supabaseClient
+        .from('user_pins')
+        .delete()
+        .eq('id', pinId);
+
+      if (error) {
+        alert('Kunde inte radera: ' + error.message);
+      } else {
+        alert('Inlägget har raderats permanent.');
+        loadReportedPinsList();
+        loadPins();
+      }
+    }
+
     async function loadMyPinsList() {
       const container = document.getElementById('mypins-list-container');
       container.innerHTML = '<p class="text-xs text-slate-500 italic">Hämtar dina inlägg...</p>';
@@ -715,7 +852,7 @@
         alert('Kunde inte spara profil: ' + error.message);
       } else {
         alert('Profilen har sparats!');
-        userProfile = { id: currentUser.id, nickname, contact_email: contactEmail, pin_emoji: pinEmoji };
+        userProfile = { ...userProfile, id: currentUser.id, nickname, contact_email: contactEmail, pin_emoji: pinEmoji };
         loadPins();
         closeProfileModal();
       }
@@ -730,7 +867,6 @@
 
       loc.reviews.forEach(review => {
         const isOwner = currentUser && review.user_id === currentUser.id;
-        const isSuperAdmin = userProfile && userProfile.role === 'super_admin';
         const isAdmin = userProfile && (userProfile.role === 'admin' || userProfile.role === 'super_admin');
         const authorName = review.profile && review.profile.nickname ? review.profile.nickname : 'Anonym Nomad';
         
@@ -747,6 +883,13 @@
             <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
               ${isOwner ? `<button onclick="closeLocationModal(); editPin(${review.id}, '${escapeHtml(review.review_like || '').replace(/'/g, "\\'")}', '${escapeHtml(review.review_dislike || '').replace(/'/g, "\\'")}', '${escapeHtml(review.review_recommend || '').replace(/'/g, "\\'")}', '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button><span class="text-slate-600">|</span>` : ''}
               <button onclick="deletePin(${review.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">${isAdmin && !isOwner ? '🗑️ Radera (Admin)' : 'Radera'}</button>
+            </div>
+          `;
+        } else {
+          // Knapp för vanliga användare att rapportera andras inlägg
+          actionButtons = `
+            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
+              <button onclick="reportPin(${review.id})" class="text-slate-400 hover:text-rose-400 font-medium cursor-pointer transition">🚩 Rapportera inlägg</button>
             </div>
           `;
         }
