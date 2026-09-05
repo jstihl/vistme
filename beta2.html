@@ -130,7 +130,7 @@
 
   <!-- Header / Top Bar -->
   <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl transition-all duration-300">
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3">
       <div class="flex items-center gap-2">
         <span class="text-2xl">📌</span>
         <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Beta</span></h1>
@@ -140,6 +140,13 @@
         <span>📌</span>
         <span>Mina Post-its</span>
       </button>
+
+      <!-- Filtrera efter resenär -->
+      <div class="relative">
+        <select id="user-filter-select" onchange="filterPinsByUser(this.value)" class="text-xs bg-slate-800/90 border border-slate-700 text-indigo-200 px-3 py-2 rounded-xl font-medium transition cursor-pointer focus:outline-none focus:border-indigo-500">
+          <option value="all">🌐 Alla resenärer</option>
+        </select>
+      </div>
     </div>
     
     <div class="flex items-center gap-2">
@@ -315,6 +322,9 @@
     let userProfile = null;
     let userAvatarUrl = '';
     let editingPinId = null;
+    let allPinsData = [];
+    let allProfilesMap = {};
+    let currentFilterUser = 'all';
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -419,8 +429,6 @@
 
     async function loadPins() {
       if (!supabaseClient) return;
-      
-      markersLayer.clearLayers();
 
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
@@ -433,13 +441,56 @@
       if (error) return console.error('Kunde inte hämta inlägg:', error);
 
       const { data: profiles } = await supabaseClient.from('profiles').select('*');
-      const profilesMap = {};
+      allProfilesMap = {};
       if (profiles) {
-        profiles.forEach(p => { profilesMap[p.id] = p; });
+        profiles.forEach(p => { allProfilesMap[p.id] = p; });
       }
 
+      allPinsData = pins.map(pin => ({
+        ...pin,
+        profile: allProfilesMap[pin.user_id] || { nickname: 'Anonym Nomad' }
+      }));
+
+      updateUserFilterDropdown();
+      renderMapPins();
+    }
+
+    function updateUserFilterDropdown() {
+      const select = document.getElementById('user-filter-select');
+      const currentVal = select.value;
+      
+      // Hämta unika användare från aktiva inlägg
+      const usersMap = {};
+      allPinsData.forEach(pin => {
+        usersMap[pin.user_id] = pin.profile.nickname || 'Anonym Nomad';
+      });
+
+      select.innerHTML = '<option value="all">🌐 Alla resenärer</option>';
+      Object.entries(usersMap).forEach(([userId, nickname]) => {
+        const opt = document.createElement('option');
+        opt.value = userId;
+        opt.innerText = `👤 ${nickname}`;
+        select.appendChild(opt);
+      });
+
+      select.value = currentVal;
+    }
+
+    function filterPinsByUser(userId) {
+      currentFilterUser = userId;
+      renderMapPins();
+    }
+
+    function renderMapPins() {
+      markersLayer.clearLayers();
+
+      // Filtrera baserat på vald användare
+      const filteredPins = currentFilterUser === 'all' 
+        ? allPinsData 
+        : allPinsData.filter(p => p.user_id === currentFilterUser);
+
       const locationsMap = {};
-      pins.forEach(pin => {
+      filteredPins.forEach(pin => {
         const key = pin.location_name;
         if (!locationsMap[key]) {
           locationsMap[key] = {
@@ -449,7 +500,6 @@
             reviews: []
           };
         }
-        pin.profile = profilesMap[pin.user_id] || { nickname: 'Anonym Nomad' };
         locationsMap[key].reviews.push(pin);
       });
 
@@ -749,7 +799,7 @@
             .update({
               location_name: normalizedLocation,
               display_name: displayName,
-              review_text: `${likeText} | ${dislikeText} | ${recommendText}`, // Bakåtkompatibilitet
+              review_text: `${likeText} | ${dislikeText} | ${recommendText}`,
               review_like: likeText,
               review_dislike: dislikeText,
               review_recommend: recommendText,
