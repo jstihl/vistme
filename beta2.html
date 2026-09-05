@@ -234,7 +234,7 @@
     </div>
   </div>
 
-  <!-- Popup-modal för Profil -->
+  <!-- Popup-modal för Profil (Med anpassad nål-emoji) -->
   <div id="profile-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
       <div class="flex justify-between items-center mb-4">
@@ -246,7 +246,7 @@
         <div class="flex items-center gap-4 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
           <img id="profile-modal-avatar" src="" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-indigo-500 object-cover cursor-pointer shadow-md" onclick="openImageModal(this.src)" title="Klicka för att förstora">
           <div>
-            <p class="text-xs text-slate-400">Valfritt smeknamn och valfri e-post (GDPR-vänligt).</p>
+            <p class="text-xs text-slate-400">Valfritt smeknamn, e-post och personlig nål-emoji.</p>
           </div>
         </div>
         
@@ -258,6 +258,11 @@
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">Kontakt-e-post (Helt valfritt)</label>
           <input type="email" id="profile-email" placeholder="t.ex. du@example.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Din personliga karta-emoji (t.ex. 📍, ✈️, ⭐, 🚀)</label>
+          <input type="text" id="profile-pin-emoji" maxlength="2" placeholder="📍" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 text-sm text-center text-xl">
         </div>
       </div>
 
@@ -448,7 +453,7 @@
 
       allPinsData = pins.map(pin => ({
         ...pin,
-        profile: allProfilesMap[pin.user_id] || { nickname: 'Anonym Nomad' }
+        profile: allProfilesMap[pin.user_id] || { nickname: 'Anonym Nomad', pin_emoji: '📍' }
       }));
 
       updateUserFilterDropdown();
@@ -459,7 +464,6 @@
       const select = document.getElementById('user-filter-select');
       const currentVal = select.value;
       
-      // Hämta unika användare från aktiva inlägg
       const usersMap = {};
       allPinsData.forEach(pin => {
         usersMap[pin.user_id] = pin.profile.nickname || 'Anonym Nomad';
@@ -484,7 +488,6 @@
     function renderMapPins() {
       markersLayer.clearLayers();
 
-      // Filtrera baserat på vald användare
       const filteredPins = currentFilterUser === 'all' 
         ? allPinsData 
         : allPinsData.filter(p => p.user_id === currentFilterUser);
@@ -504,7 +507,18 @@
       });
 
       Object.values(locationsMap).forEach(loc => {
-        const marker = L.marker([loc.lat, loc.lng]).addTo(markersLayer);
+        // Hämta första skaparens valda emoji (eller standard 📍 om ingen satt)
+        const firstReview = loc.reviews[0];
+        const userEmoji = (firstReview && firstReview.profile && firstReview.profile.pin_emoji) ? firstReview.profile.pin_emoji : '📍';
+
+        const customPin = L.divIcon({
+          className: 'custom-map-pin',
+          html: `<div style="font-size: 28px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.5)); transform: translateY(-5px);">${userEmoji}</div>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        });
+
+        const marker = L.marker([loc.lat, loc.lng], { icon: customPin }).addTo(markersLayer);
         marker.on('click', () => {
           if (!currentUser) {
             openLoginPostIt();
@@ -544,9 +558,11 @@
       if (userProfile) {
         document.getElementById('profile-nickname').value = userProfile.nickname || '';
         document.getElementById('profile-email').value = userProfile.contact_email || '';
+        document.getElementById('profile-pin-emoji').value = userProfile.pin_emoji || '📍';
       } else {
         document.getElementById('profile-nickname').value = '';
         document.getElementById('profile-email').value = '';
+        document.getElementById('profile-pin-emoji').value = '📍';
       }
 
       document.getElementById('profile-modal').classList.remove('hidden');
@@ -676,11 +692,13 @@
 
       const nickname = document.getElementById('profile-nickname').value.trim();
       const contactEmail = document.getElementById('profile-email').value.trim();
+      const pinEmoji = document.getElementById('profile-pin-emoji').value.trim() || '📍';
 
       const { error } = await supabaseClient.from('profiles').upsert({
         id: currentUser.id,
         nickname: nickname || 'Anonym Nomad',
         contact_email: contactEmail,
+        pin_emoji: pinEmoji,
         updated_at: new Date()
       });
 
@@ -688,7 +706,7 @@
         alert('Kunde inte spara profil: ' + error.message);
       } else {
         alert('Profilen har sparats!');
-        userProfile = { id: currentUser.id, nickname, contact_email: contactEmail };
+        userProfile = { id: currentUser.id, nickname, contact_email: contactEmail, pin_emoji: pinEmoji };
         loadPins();
         closeProfileModal();
       }
