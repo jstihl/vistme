@@ -234,7 +234,7 @@
     </div>
   </div>
 
-  <!-- Popup-modal för Profil (Med anpassad nål-emoji) -->
+  <!-- Popup-modal för Profil (Med klickbara emoji-knappar) -->
   <div id="profile-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
       <div class="flex justify-between items-center mb-4">
@@ -246,7 +246,7 @@
         <div class="flex items-center gap-4 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
           <img id="profile-modal-avatar" src="" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-indigo-500 object-cover cursor-pointer shadow-md" onclick="openImageModal(this.src)" title="Klicka för att förstora">
           <div>
-            <p class="text-xs text-slate-400">Valfritt smeknamn, e-post och personlig nål-emoji.</p>
+            <p class="text-xs text-slate-400">Välj din personliga symbol för kartan.</p>
           </div>
         </div>
         
@@ -261,8 +261,12 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Din personliga karta-emoji (t.ex. 📍, ✈️, ⭐, 🚀)</label>
-          <input type="text" id="profile-pin-emoji" maxlength="2" placeholder="📍" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 text-sm text-center text-xl">
+          <label class="block text-xs font-semibold text-slate-400 mb-2">Välj din karta-symbol:</label>
+          <div id="emoji-picker-container" class="grid grid-cols-4 gap-2">
+            <!-- Fyllda knappar via JS -->
+          </div>
+          <!-- Dold input som sparar valt värde -->
+          <input type="hidden" id="selected-pin-emoji" value="📍">
         </div>
       </div>
 
@@ -331,6 +335,9 @@
     let allProfilesMap = {};
     let currentFilterUser = 'all';
 
+    // Tillgängliga ikoner för användaren att välja mellan
+    const availableEmojis = ['📍', '📌', '✈️', '⭐', '🚀', '🏕️', '☕', '🌴'];
+
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
@@ -355,6 +362,8 @@
       setTimeout(() => { 
         map.invalidateSize(); 
       }, 150);
+
+      buildEmojiPicker();
 
       if (supabaseClient) {
         supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -381,6 +390,30 @@
         loadPins();
       }
     });
+
+    function buildEmojiPicker() {
+      const container = document.getElementById('emoji-picker-container');
+      container.innerHTML = '';
+      availableEmojis.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emoji-option-btn text-2xl p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition cursor-pointer flex items-center justify-center';
+        btn.innerText = emoji;
+        btn.onclick = () => selectEmoji(emoji);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectEmoji(emoji) {
+      document.getElementById('selected-pin-emoji').value = emoji;
+      document.querySelectorAll('.emoji-option-btn').forEach(btn => {
+        if (btn.innerText === emoji) {
+          btn.classList.add('border-indigo-500', 'bg-indigo-600/30', 'scale-105');
+        } else {
+          btn.classList.remove('border-indigo-500', 'bg-indigo-600/30', 'scale-105');
+        }
+      });
+    }
 
     function closeIntroSplash() {
       const splash = document.getElementById('intro-splash');
@@ -507,7 +540,6 @@
       });
 
       Object.values(locationsMap).forEach(loc => {
-        // Hämta första skaparens valda emoji (eller standard 📍 om ingen satt)
         const firstReview = loc.reviews[0];
         const userEmoji = (firstReview && firstReview.profile && firstReview.profile.pin_emoji) ? firstReview.profile.pin_emoji : '📍';
 
@@ -555,14 +587,15 @@
         document.getElementById('profile-modal-avatar').src = userAvatarUrl;
       }
 
+      const currentEmoji = (userProfile && userProfile.pin_emoji) ? userProfile.pin_emoji : '📍';
+      selectEmoji(currentEmoji);
+
       if (userProfile) {
         document.getElementById('profile-nickname').value = userProfile.nickname || '';
         document.getElementById('profile-email').value = userProfile.contact_email || '';
-        document.getElementById('profile-pin-emoji').value = userProfile.pin_emoji || '📍';
       } else {
         document.getElementById('profile-nickname').value = '';
         document.getElementById('profile-email').value = '';
-        document.getElementById('profile-pin-emoji').value = '📍';
       }
 
       document.getElementById('profile-modal').classList.remove('hidden');
@@ -583,6 +616,7 @@
     }
 
     function openTermsModal() {
+      document.getElementById('terms-modal').classList.add('hidden'); // Fix toggle
       document.getElementById('terms-modal').classList.remove('hidden');
     }
 
@@ -692,7 +726,7 @@
 
       const nickname = document.getElementById('profile-nickname').value.trim();
       const contactEmail = document.getElementById('profile-email').value.trim();
-      const pinEmoji = document.getElementById('profile-pin-emoji').value.trim() || '📍';
+      const pinEmoji = document.getElementById('selected-pin-emoji').value;
 
       const { error } = await supabaseClient.from('profiles').upsert({
         id: currentUser.id,
