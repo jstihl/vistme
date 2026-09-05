@@ -168,13 +168,13 @@
   </button>
 
   <!-- Modals -->
-  <!-- Helskärms-modal för "Mina Post-its" -->
+  <!-- Mina Post-its Modal -->
   <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
         <div>
           <h2 class="text-xl font-bold text-indigo-300">Dina aktiva Post-its</h2>
-          <p class="text-xs text-slate-400">Här ser du en komplett lista över alla platser du har märkt ut. Äldre än 14 dagar raderas automatiskt.</p>
+          <p class="text-xs text-slate-400">Här ser du en komplett lista över dina inlägg (äldre än 14 dagar raderas automatiskt).</p>
         </div>
         <button onclick="closeMyPinsModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
       </div>
@@ -188,7 +188,7 @@
     </div>
   </div>
 
-  <!-- Popup-modal för Skriv / Redigera Post-it -->
+  <!-- Skriv / Redigera Post-it Modal -->
   <div id="pin-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-lg max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
       <div class="flex justify-between items-center mb-4">
@@ -206,4 +206,674 @@
         </div>
         <div>
           <label class="block text-xs font-semibold text-rose-400 mb-1">👎 Jag tycker inte om...</label>
-          <textarea id="review-
+          <textarea id="review-dislike" maxlength="300" rows="2" placeholder="Vad är mindre bra / värt att veta?" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-amber-400 mb-1">⭐ Jag rekommenderar...</label>
+          <textarea id="review-recommend" maxlength="300" rows="2" placeholder="Ditt bästa tips / sak att göra där!" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 text-sm"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6 pt-4 border-t border-slate-800">
+        <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer text-sm shadow-lg">Spara Post-it</button>
+        <button onclick="closePinModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer text-sm">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profil Modal -->
+  <div id="profile-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-indigo-300">Din Profil</h2>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
+      </div>
+      <div class="space-y-4 overflow-y-auto flex-1 pr-1">
+        <div class="flex items-center gap-4 bg-slate-800/40 p-3 rounded-2xl border border-slate-800">
+          <img id="profile-modal-avatar" src="" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-indigo-500 object-cover cursor-pointer shadow-md" onclick="openImageModal(this.src)" title="Klicka för att förstora">
+          <div>
+            <p class="text-xs text-slate-400">Välj din personliga symbol för kartan.</p>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Nickname / Namn (Valfritt)</label>
+          <input type="text" id="profile-nickname" placeholder="t.ex. NomadJasmin" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Kontakt-e-post (Helt valfritt)</label>
+          <input type="email" id="profile-email" placeholder="t.ex. du@example.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2">Välj din karta-symbol:</label>
+          <div id="emoji-picker-container" class="grid grid-cols-4 gap-2"></div>
+          <input type="hidden" id="selected-pin-emoji" value="📍">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6 pt-4 border-t border-slate-800">
+        <button onclick="saveProfile()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer text-sm shadow-lg">Spara Profil</button>
+        <button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer text-sm">Stäng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Details Modal -->
+  <div id="location-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div>
+          <h2 id="location-modal-title" class="text-xl font-bold text-indigo-300">Plats</h2>
+          <p id="location-modal-subtitle" class="text-xs text-slate-400">Aktiva inlägg</p>
+        </div>
+        <button onclick="closeLocationModal()" class="text-slate-400 hover:text-white text-xl p-2 rounded-xl bg-slate-800/60 cursor-pointer">✕</button>
+      </div>
+      <div id="location-reviews-list" class="p-6 overflow-y-auto space-y-4 flex-1"></div>
+      <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end">
+        <button onclick="closeLocationModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Stäng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div id="image-modal" class="fixed inset-0 z-40 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="closeImageModal()">
+    <div class="relative max-w-md w-full flex flex-col items-center">
+      <img id="modal-big-img" src="" alt="Stor profilbild" class="w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-indigo-500/50 shadow-2xl object-cover">
+      <p class="text-slate-400 text-xs mt-4">Klicka var som helst för att stänga</p>
+    </div>
+  </div>
+
+  <!-- Terms Modal -->
+  <div id="terms-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6 text-slate-300 text-sm">
+      <h2 class="text-xl font-bold text-indigo-300 mb-3">Terms of Use & GDPR</h2>
+      <div class="space-y-3 overflow-y-auto flex-1 pr-2 text-xs leading-relaxed text-slate-300">
+        <p><strong>1. Syfte:</strong> VistMe är en plattform för resenärer att dela tillfälliga tips och upplevelser kopplat till platser på kartan.</p>
+        <p><strong>2. Färskvara:</strong> Inlägg raderas automatiskt efter 14 dagar för att hålla kartan levande och aktuell.</p>
+        <p><strong>3. Integritet & GDPR:</strong> Vi sparar ingen känslig personlig data. Smeknamn är valfritt, och e-postadress är helt frivillig.</p>
+        <p><strong>4. Ansvar:</strong> Håll en trevlig ton, dela schyssta tips och sprid god stämning!</p>
+      </div>
+      <button onclick="closeTermsModal()" class="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white py-2.5 rounded-xl font-medium cursor-pointer">Stäng</button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uzadvxbtgrkmuagjtkfr.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
+    
+    let supabaseClient = null;
+    let map = null;
+    let currentUser = null;
+    let markersLayer = null;
+    let userProfile = null;
+    let userAvatarUrl = '';
+    let editingPinId = null;
+    let allPinsData = [];
+    let allProfilesMap = {};
+    let currentFilterUser = 'all';
+
+    const availableEmojis = ['📍', '📌', '✈️', '⭐', '🚀', '🏕️', '☕', '🌴'];
+
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      map = L.map('map', { 
+        zoomControl: false,
+        bounceAtZoomLimits: false,
+        minZoom: 3,
+        worldCopyJump: true
+      }).setView([20, 0], 3);
+      
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 17,
+        maxNativeZoom: 15,
+        minZoom: 3,
+        attribution: 'Tiles &copy; Esri'
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+      
+      setTimeout(() => { 
+        map.invalidateSize(); 
+      }, 150);
+
+      buildEmojiPicker();
+
+      if (supabaseClient) {
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          if (session) {
+            currentUser = session.user;
+            userAvatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '';
+            
+            document.getElementById('login-btn').classList.add('hidden');
+            document.getElementById('user-profile').classList.remove('hidden');
+            
+            if (userAvatarUrl) {
+              document.getElementById('header-avatar').src = userAvatarUrl;
+            }
+
+            fetchUserProfile(session.user.id);
+          } else {
+            currentUser = null;
+            userAvatarUrl = '';
+            document.getElementById('login-btn').classList.remove('hidden');
+            document.getElementById('user-profile').classList.add('hidden');
+          }
+        });
+
+        loadPins();
+      }
+    });
+
+    function buildEmojiPicker() {
+      const container = document.getElementById('emoji-picker-container');
+      if (!container) return;
+      container.innerHTML = '';
+      availableEmojis.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emoji-option-btn text-2xl p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition cursor-pointer flex items-center justify-center';
+        btn.innerText = emoji;
+        btn.onclick = () => selectEmoji(emoji);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectEmoji(emoji) {
+      document.getElementById('selected-pin-emoji').value = emoji;
+      document.querySelectorAll('.emoji-option-btn').forEach(btn => {
+        if (btn.innerText === emoji) {
+          btn.classList.add('border-indigo-500', 'bg-indigo-600/30', 'scale-105');
+        } else {
+          btn.classList.remove('border-indigo-500', 'bg-indigo-600/30', 'scale-105');
+        }
+      });
+    }
+
+    function closeIntroSplash() {
+      const splash = document.getElementById('intro-splash');
+      splash.classList.add('fade-out');
+      setTimeout(() => {
+        splash.style.display = 'none';
+        map.invalidateSize();
+      }, 600);
+    }
+
+    function openLoginPostIt() {
+      document.getElementById('login-postit-modal').classList.remove('hidden');
+    }
+
+    function closeLoginPostIt() {
+      document.getElementById('login-postit-modal').classList.add('hidden');
+    }
+
+    async function fetchUserProfile(userId) {
+      const { data } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (data) {
+        userProfile = data;
+      }
+    }
+
+    async function loginWithGoogle() {
+      if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
+      const { error } = await supabaseClient.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: { redirectTo: 'https://jstihl.github.io/vistme/beta.html' }
+      });
+      if (error) alert('Inloggning misslyckades: ' + error.message);
+    }
+
+    async function logout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      window.location.reload();
+    }
+
+    function normalizeLocationName(name) {
+      return name
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+    }
+
+    async function loadPins() {
+      if (!supabaseClient) return;
+
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      const { data: pins, error } = await supabaseClient
+        .from('user_pins')
+        .select('*')
+        .gte('updated_at', fourteenDaysAgo.toISOString());
+
+      if (error) return console.error('Kunde inte hämta inlägg:', error);
+
+      const { data: profiles } = await supabaseClient.from('profiles').select('*');
+      allProfilesMap = {};
+      if (profiles) {
+        profiles.forEach(p => { allProfilesMap[p.id] = p; });
+      }
+
+      allPinsData = pins.map(pin => ({
+        ...pin,
+        profile: allProfilesMap[pin.user_id] || { nickname: 'Anonym Nomad', pin_emoji: '📍' }
+      }));
+
+      updateUserFilterDropdown();
+      renderMapPins();
+    }
+
+    function updateUserFilterDropdown() {
+      const select = document.getElementById('user-filter-select');
+      if (!select) return;
+      const currentVal = select.value;
+      
+      const usersMap = {};
+      allPinsData.forEach(pin => {
+        usersMap[pin.user_id] = pin.profile.nickname || 'Anonym Nomad';
+      });
+
+      select.innerHTML = '<option value="all">🌐 Alla resenärer</option>';
+      Object.entries(usersMap).forEach(([userId, nickname]) => {
+        const opt = document.createElement('option');
+        opt.value = userId;
+        opt.innerText = `👤 ${nickname}`;
+        select.appendChild(opt);
+      });
+
+      select.value = currentVal;
+    }
+
+    function filterPinsByUser(userId) {
+      currentFilterUser = userId;
+      renderMapPins();
+    }
+
+    function renderMapPins() {
+      if (!markersLayer) return;
+      markersLayer.clearLayers();
+
+      const filteredPins = currentFilterUser === 'all' 
+        ? allPinsData 
+        : allPinsData.filter(p => p.user_id === currentFilterUser);
+
+      const locationsMap = {};
+      filteredPins.forEach(pin => {
+        const key = pin.location_name;
+        if (!locationsMap[key]) {
+          locationsMap[key] = {
+            display_name: pin.display_name,
+            lat: pin.lat,
+            lng: pin.lng,
+            reviews: []
+          };
+        }
+        locationsMap[key].reviews.push(pin);
+      });
+
+      Object.values(locationsMap).forEach(loc => {
+        const firstReview = loc.reviews[0];
+        const userEmoji = (firstReview && firstReview.profile && firstReview.profile.pin_emoji) ? firstReview.profile.pin_emoji : '📍';
+
+        const customPin = L.divIcon({
+          className: 'custom-map-pin',
+          html: `<div style="font-size: 28px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.5)); transform: translateY(-5px);">${userEmoji}</div>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        });
+
+        const marker = L.marker([loc.lat, loc.lng], { icon: customPin }).addTo(markersLayer);
+        marker.on('click', () => {
+          if (!currentUser) {
+            openLoginPostIt();
+            return;
+          }
+          showLocationDetails(loc);
+        });
+      });
+    }
+
+    function openPinModal() {
+      if (!currentUser) {
+        openLoginPostIt();
+        return;
+      }
+      editingPinId = null;
+      document.getElementById('location-input').value = '';
+      document.getElementById('review-like').value = '';
+      document.getElementById('review-dislike').value = '';
+      document.getElementById('review-recommend').value = '';
+      document.getElementById('pin-modal').classList.remove('hidden');
+    }
+
+    function closePinModal() {
+      document.getElementById('pin-modal').classList.add('hidden');
+    }
+
+    function openProfileModal() {
+      if (!currentUser) {
+        openLoginPostIt();
+        return;
+      }
+      if (userAvatarUrl) {
+        document.getElementById('profile-modal-avatar').src = userAvatarUrl;
+      }
+
+      const currentEmoji = (userProfile && userProfile.pin_emoji) ? userProfile.pin_emoji : '📍';
+      selectEmoji(currentEmoji);
+
+      if (userProfile) {
+        document.getElementById('profile-nickname').value = userProfile.nickname || '';
+        document.getElementById('profile-email').value = userProfile.contact_email || '';
+      } else {
+        document.getElementById('profile-nickname').value = '';
+        document.getElementById('profile-email').value = '';
+      }
+
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    function openImageModal(imgSrc) {
+      if (!imgSrc) return;
+      document.getElementById('modal-big-img').src = imgSrc;
+      document.getElementById('image-modal').classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+      document.getElementById('image-modal').classList.add('hidden');
+    }
+
+    function openTermsModal() {
+      document.getElementById('terms-modal').classList.remove('hidden');
+    }
+
+    function closeTermsModal() {
+      document.getElementById('terms-modal').classList.add('hidden');
+    }
+
+    async function openMyPinsModal() {
+      if (!currentUser) {
+        openLoginPostIt();
+        return;
+      }
+      document.getElementById('mypins-modal').classList.remove('hidden');
+      await loadMyPinsList();
+    }
+
+    function closeMyPinsModal() {
+      document.getElementById('mypins-modal').classList.add('hidden');
+    }
+
+    function closeLocationModal() {
+      document.getElementById('location-modal').classList.add('hidden');
+    }
+
+    async function loadMyPinsList() {
+      const container = document.getElementById('mypins-list-container');
+      container.innerHTML = '<p class="text-xs text-slate-500 italic">Hämtar dina inlägg...</p>';
+
+      if (!currentUser) return;
+
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      const { data: pins, error } = await supabaseClient
+        .from('user_pins')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .gte('updated_at', fourteenDaysAgo.toISOString())
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        container.innerHTML = '<p class="text-xs text-rose-400">Kunde inte hämta dina inlägg.</p>';
+        return;
+      }
+
+      if (!pins || pins.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-10">Du har inga aktiva Post-its. Klicka på "Skriv Post-it" för att lägga till ett nytt tips!</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      pins.forEach(pin => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 text-slate-200 text-sm relative cursor-pointer hover:border-indigo-500/50 transition';
+        
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-3">
+            <span class="font-bold text-base text-indigo-300">${escapeHtml(pin.display_name)}</span>
+            <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-500/30">📌 Post-it</span>
+          </div>
+          <div class="space-y-2 text-xs leading-relaxed">
+            ${pin.review_like ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(pin.review_like)}</div>` : ''}
+            ${pin.review_dislike ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(pin.review_dislike)}</div>` : ''}
+            ${pin.review_recommend ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(pin.review_recommend)}</div>` : ''}
+          </div>
+          <div class="flex gap-4 text-xs pt-3 mt-3 border-t border-slate-700/50" onclick="event.stopPropagation()">
+            <button onclick="closeMyPinsModal(); closeLocationModal(); editPin(${pin.id}, '${escapeHtml(pin.review_like || '').replace(/'/g, "\\'")}', '${escapeHtml(pin.review_dislike || '').replace(/'/g, "\\'")}', '${escapeHtml(pin.review_recommend || '').replace(/'/g, "\\'")}', '${escapeHtml(pin.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
+            <span class="text-slate-600">|</span>
+            <button onclick="deletePin(${pin.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function editPin(pinId, like, dislike, recommend, displayName) {
+      editingPinId = pinId;
+      document.getElementById('location-input').value = displayName;
+      document.getElementById('review-like').value = like;
+      document.getElementById('review-dislike').value = dislike;
+      document.getElementById('review-recommend').value = recommend;
+      document.getElementById('pin-modal').classList.remove('hidden');
+    }
+
+    async function deletePin(pinId) {
+      if (!confirm('Är du säker på att du vill radera denna Post-it?')) return;
+
+      const { error } = await supabaseClient
+        .from('user_pins')
+        .delete()
+        .eq('id', pinId)
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        alert('Kunde inte radera: ' + error.message);
+      } else {
+        alert('Post-it har raderats.');
+        loadMyPinsList();
+        loadPins();
+        closeLocationModal();
+      }
+    }
+
+    async function saveProfile() {
+      if (!currentUser) return;
+
+      const nickname = document.getElementById('profile-nickname').value.trim();
+      const contactEmail = document.getElementById('profile-email').value.trim();
+      const pinEmoji = document.getElementById('selected-pin-emoji').value;
+
+      const { error } = await supabaseClient.from('profiles').upsert({
+        id: currentUser.id,
+        nickname: nickname || 'Anonym Nomad',
+        contact_email: contactEmail,
+        pin_emoji: pinEmoji,
+        updated_at: new Date()
+      });
+
+      if (error) {
+        alert('Kunde inte spara profil: ' + error.message);
+      } else {
+        alert('Profilen har sparats!');
+        userProfile = { id: currentUser.id, nickname, contact_email: contactEmail, pin_emoji: pinEmoji };
+        loadPins();
+        closeProfileModal();
+      }
+    }
+
+    function showLocationDetails(loc) {
+      document.getElementById('location-modal-title').innerText = loc.display_name;
+      document.getElementById('location-modal-subtitle').innerText = `${loc.reviews.length} aktiva inlägg de senaste 14 dagarna`;
+      
+      const reviewsList = document.getElementById('location-reviews-list');
+      reviewsList.innerHTML = '';
+
+      loc.reviews.forEach(review => {
+        const isOwner = currentUser && review.user_id === currentUser.id;
+        const isSuperAdmin = userProfile && userProfile.role === 'super_admin';
+        const isAdmin = userProfile && (userProfile.role === 'admin' || userProfile.role === 'super_admin');
+        const authorName = review.profile && review.profile.nickname ? review.profile.nickname : 'Anonym Nomad';
+        
+        const contactInfo = review.profile && review.profile.contact_email 
+          ? `<div class="text-xs text-indigo-300 mt-2">Kontakt: <a href="mailto:${review.profile.contact_email}" class="underline">${review.profile.contact_email}</a></div>` 
+          : '';
+
+        const reviewCard = document.createElement('div');
+        reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative';
+        
+        let actionButtons = '';
+        if (isOwner || isAdmin) {
+          actionButtons = `
+            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
+              ${isOwner ? `<button onclick="closeLocationModal(); editPin(${review.id}, '${escapeHtml(review.review_like || '').replace(/'/g, "\\'")}', '${escapeHtml(review.review_dislike || '').replace(/'/g, "\\'")}', '${escapeHtml(review.review_recommend || '').replace(/'/g, "\\'")}', '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button><span class="text-slate-600">|</span>` : ''}
+              <button onclick="deletePin(${review.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">${isAdmin && !isOwner ? '🗑️ Radera (Admin)' : 'Radera'}</button>
+            </div>
+          `;
+        }
+
+        reviewCard.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold text-sm text-indigo-400">${escapeHtml(authorName)}</span>
+            <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
+          </div>
+          <div class="mb-3">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">📌 Post-it</span>
+          </div>
+          <div class="space-y-2 text-xs leading-relaxed text-slate-300">
+            ${review.review_like ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(review.review_like)}</div>` : ''}
+            ${review.review_dislike ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(review.review_dislike)}</div>` : ''}
+            ${review.review_recommend ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(review.review_recommend)}</div>` : ''}
+          </div>
+          ${contactInfo}
+          ${actionButtons}
+        `;
+
+        reviewsList.appendChild(reviewCard);
+      });
+
+      document.getElementById('location-modal').classList.remove('hidden');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    async function savePin() {
+      if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
+      if (!currentUser) {
+        openLoginPostIt();
+        return;
+      }
+
+      const rawLocation = document.getElementById('location-input').value.trim();
+      const likeText = document.getElementById('review-like').value.trim();
+      const dislikeText = document.getElementById('review-dislike').value.trim();
+      const recommendText = document.getElementById('review-recommend').value.trim();
+
+      if (!rawLocation || (!likeText && !dislikeText && !recommendText)) {
+        return alert('Fyll i plats samt minst ett av fälten (Tycker / Tycker inte om / Rekommenderar)!');
+      }
+
+      const normalizedLocation = normalizeLocationName(rawLocation);
+
+      const saveBtn = document.querySelector('#pin-modal button[onclick="savePin()"]');
+      const originalText = saveBtn.innerText;
+      saveBtn.innerText = 'Letar koordinater...';
+      saveBtn.disabled = true;
+
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
+        const geoData = await geoRes.json();
+
+        if (!geoData || geoData.length === 0) {
+          alert('Kunde inte hitta platsen på kartan. Skriv tydligare (t.ex. "Bangkok").');
+          saveBtn.innerText = originalText;
+          saveBtn.disabled = false;
+          return;
+        }
+
+        const lat = parseFloat(geoData[0].lat);
+        const lng = parseFloat(geoData[0].lon);
+        
+        const displayName = (geoData[0].display_name) 
+          ? geoData[0].display_name.split(',')[0] 
+          : rawLocation;
+
+        let result;
+
+        if (editingPinId) {
+          result = await supabaseClient
+            .from('user_pins')
+            .update({
+              location_name: normalizedLocation,
+              display_name: displayName,
+              review_text: `${likeText} | ${dislikeText} | ${recommendText}`,
+              review_like: likeText,
+              review_dislike: dislikeText,
+              review_recommend: recommendText,
+              has_couch: false,
+              lat: lat,
+              lng: lng,
+              updated_at: new Date()
+            })
+            .eq('id', editingPinId)
+            .eq('user_id', currentUser.id);
+        } else {
+          result = await supabaseClient
+            .from('user_pins')
+            .insert({
+              user_id: currentUser.id,
+              location_name: normalizedLocation,
+              display_name: displayName,
+              review_text: `${likeText} | ${dislikeText} | ${recommendText}`,
+              review_like: likeText,
+              review_dislike: dislikeText,
+              review_recommend: recommendText,
+              has_couch: false,
+              lat: lat,
+              lng: lng,
+              updated_at: new Date()
+            });
+        }
+
+        if (result.error) {
+          alert('Ett fel uppstod: ' + result.error.message);
+        } else {
+          alert('Din Post-it har sparats!');
+          editingPinId = null;
+          closePinModal();
+          loadPins();
+          map.setView([lat, lng], 6);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Nätverksfel.');
+      } finally {
+        saveBtn.innerText = originalText;
+        saveBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
