@@ -24,7 +24,6 @@
       overflow: hidden;
       background-color: #0b0f19;
     }
-
     #map {
       height: 100vh;
       width: 100vw;
@@ -34,12 +33,10 @@
       z-index: 1;
       background: #0b0f19;
     }
-
     .leaflet-tile-pane {
       filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8);
       transition: filter 0.3s ease;
     }
-
     #intro-splash {
       transition: opacity 0.6s ease, transform 0.6s ease;
     }
@@ -48,7 +45,6 @@
       transform: scale(1.05);
       pointer-events: none;
     }
-
     @keyframes wobble {
       0% { transform: rotate(0deg) scale(0.9); opacity: 0; }
       20% { transform: rotate(-3deg) scale(1); opacity: 1; }
@@ -57,7 +53,6 @@
       80% { transform: rotate(1deg); }
       100% { transform: rotate(0deg); }
     }
-
     .postit-note {
       background: linear-gradient(135deg, #fef08a 0%, #facc15 85%, #eab308 100%);
       color: #0f172a;
@@ -133,13 +128,11 @@
         <span>Mina Post-its</span>
       </button>
 
-      <!-- Admin-knapp -->
       <button id="admin-reports-btn" onclick="openAdminModal()" class="hidden text-xs bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/40 text-rose-200 px-3 py-2 rounded-xl font-medium transition flex items-center gap-1.5 cursor-pointer shadow-md">
         <span>🚨</span>
         <span>Granska anmälningar</span>
       </button>
 
-      <!-- Filter -->
       <div class="relative">
         <select id="user-filter-select" onchange="filterPinsByUser(this.value)" class="text-xs bg-slate-800/90 border border-slate-700 text-indigo-200 px-3 py-2 rounded-xl font-medium transition cursor-pointer focus:outline-none focus:border-indigo-500">
           <option value="all">🌐 Alla resenärer</option>
@@ -174,7 +167,6 @@
   </button>
 
   <!-- Modals -->
-  <!-- Mina Post-its Modal -->
   <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
@@ -193,7 +185,6 @@
     </div>
   </div>
 
-  <!-- Admin Reports Modal -->
   <div id="admin-reports-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
@@ -212,7 +203,6 @@
     </div>
   </div>
 
-  <!-- Skriv / Redigera Post-it Modal -->
   <div id="pin-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-lg max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
       <div class="flex justify-between items-center mb-4">
@@ -244,7 +234,6 @@
     </div>
   </div>
 
-  <!-- Profil Modal -->
   <div id="profile-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6">
       <div class="flex justify-between items-center mb-4">
@@ -279,7 +268,6 @@
     </div>
   </div>
 
-  <!-- Location Details Modal -->
   <div id="location-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
@@ -296,7 +284,6 @@
     </div>
   </div>
 
-  <!-- Image Modal -->
   <div id="image-modal" class="fixed inset-0 z-40 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="closeImageModal()">
     <div class="relative max-w-md w-full flex flex-col items-center">
       <img id="modal-big-img" src="" alt="Stor profilbild" class="w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-indigo-500/50 shadow-2xl object-cover">
@@ -304,7 +291,6 @@
     </div>
   </div>
 
-  <!-- Terms Modal -->
   <div id="terms-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-lg max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden p-6 text-slate-300 text-sm">
       <h2 class="text-xl font-bold text-indigo-300 mb-3">Terms of Use & GDPR</h2>
@@ -814,8 +800,6 @@
 
     async function deletePin(pinId) {
       if (!confirm('Är du säker på att du vill radera denna Post-it?')) return;
-
-      console.log("Försöker radera pin med ID:", pinId);
 
       const { error } = await supabaseClient
         .from('user_pins')
