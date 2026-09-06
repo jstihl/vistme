@@ -123,7 +123,64 @@
     </div>
   </div>
 
-  <!-- Terms of Use & GDPR Modal -->
+  <!-- User Profile Modal -->
+  <div id="profile-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl shadow-2xl flex flex-col p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold text-indigo-300">Din Profil</h2>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Avatar -->
+        <div class="flex justify-center">
+          <img id="profile-avatar-preview" src="" alt="Avatar" class="w-20 h-20 rounded-full border-2 border-indigo-500/40 object-cover">
+        </div>
+
+        <!-- Nickname -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-slate-300">Smeknamn / Namn (valfritt)</label>
+          <input type="text" id="profile-nickname" placeholder="Nomad Jasmin" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
+        </div>
+
+        <!-- Email -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-slate-300">Kontakt e-post (helt frivillig)</label>
+          <input type="email" id="profile-email" placeholder="optional@email.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
+        </div>
+
+        <!-- Pin Emoji Selector -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-slate-300">Välj din nål-emoji</label>
+          <div class="grid grid-cols-6 gap-2">
+            <button onclick="selectPinEmoji('📍')" id="pin-emoji-📍" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">📍</button>
+            <button onclick="selectPinEmoji('✈️')" id="pin-emoji-✈️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">✈️</button>
+            <button onclick="selectPinEmoji('🧳')" id="pin-emoji-🧳" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🧳</button>
+            <button onclick="selectPinEmoji('🌍')" id="pin-emoji-🌍" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🌍</button>
+            <button onclick="selectPinEmoji('🗺️')" id="pin-emoji-🗺️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🗺️</button>
+            <button onclick="selectPinEmoji('🚀')" id="pin-emoji-🚀" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🚀</button>
+            <button onclick="selectPinEmoji('🎒')" id="pin-emoji-🎒" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🎒</button>
+            <button onclick="selectPinEmoji('🏖️')" id="pin-emoji-🏖️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🏖️</button>
+            <button onclick="selectPinEmoji('⛰️')" id="pin-emoji-⛰️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">⛰️</button>
+            <button onclick="selectPinEmoji('🏔️')" id="pin-emoji-🏔️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🏔️</button>
+            <button onclick="selectPinEmoji('🌴')" id="pin-emoji-🌴" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🌴</button>
+            <button onclick="selectPinEmoji('🚗')" id="pin-emoji-🚗" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🚗</button>
+          </div>
+          <div class="text-xs text-slate-400 text-center">Vald nål: <span id="selected-pin-display">📍</span></div>
+        </div>
+
+        <!-- GDPR Info -->
+        <div class="bg-slate-800/50 border border-slate-700/50 p-3 rounded-xl text-xs text-slate-400">
+          <p>📋 Valfritt att fylla i smeknamn och e-post. Vi sparar ingen känslig data och följer GDPR.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6 pt-6 border-t border-slate-800">
+        <button id="save-profile-btn" onclick="saveProfile()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold cursor-pointer text-sm transition">Spara Profil</button>
+        <button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl text-sm cursor-pointer transition">Stäng</button>
+      </div>
+    </div>
+  </div>
   <div id="terms-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-800 flex justify-between items-center">
@@ -252,7 +309,12 @@
 
         let profilesMap = {};
         if (profiles) {
-          profiles.forEach(p => profilesMap[p.id] = p);
+          profiles.forEach(p => profilesMap[p.id] = {
+            nickname: p.nickname || 'Anonym',
+            pin_emoji: p.pin_emoji || '📍',
+            avatar_url: p.avatar_url || '',
+            contact_email: p.contact_email || ''
+          });
         }
 
         allPinsData = (pins || []).map(pin => ({
@@ -284,7 +346,9 @@
       });
 
       Object.values(locationsMap).forEach(loc => {
-        let emoji = loc.reviews[0].profile.pin_emoji || '📍';
+        // Use the first review's profile emoji, or default to pin emoji
+        let emoji = loc.reviews[0]?.profile?.pin_emoji || '📍';
+        
         let marker = L.marker([loc.lat, loc.lng], {
           icon: L.divIcon({
             className: 'custom-map-pin',
@@ -608,9 +672,110 @@
       document.getElementById('admin-reports-modal').classList.add('hidden');
     }
 
-    // Open profile modal (placeholder)
-    function openProfileModal() {
-      alert('Profiländringar kommer snart!');
+    // Open profile modal
+    async function openProfileModal() {
+      if (!currentUser) return;
+
+      document.getElementById('profile-modal').classList.remove('hidden');
+      
+      try {
+        const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+        
+        if (error && error.code !== 'PGRST116') throw error;
+
+        if (data) {
+          userProfile = data;
+          document.getElementById('profile-nickname').value = data.nickname || '';
+          document.getElementById('profile-email').value = data.contact_email || '';
+          document.getElementById('profile-avatar-preview').src = data.avatar_url || (currentUser.user_metadata?.avatar_url || '');
+          
+          // Set selected pin emoji
+          const selectedEmoji = data.pin_emoji || '📍';
+          updatePinEmojiSelection(selectedEmoji);
+        } else {
+          // New user - set defaults
+          document.getElementById('profile-avatar-preview').src = currentUser.user_metadata?.avatar_url || '';
+          updatePinEmojiSelection('📍');
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+
+    // Close profile modal
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    // Select pin emoji
+    function selectPinEmoji(emoji) {
+      updatePinEmojiSelection(emoji);
+    }
+
+    // Update pin emoji selection UI
+    function updatePinEmojiSelection(emoji) {
+      // Remove active state from all buttons
+      document.querySelectorAll('[id^="pin-emoji-"]').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'border-indigo-500');
+        btn.classList.add('bg-slate-800', 'border-slate-700');
+      });
+
+      // Add active state to selected button
+      const selectedBtn = document.getElementById(`pin-emoji-${emoji}`);
+      if (selectedBtn) {
+        selectedBtn.classList.remove('bg-slate-800', 'border-slate-700');
+        selectedBtn.classList.add('bg-indigo-600', 'border-indigo-500');
+      }
+
+      // Update display
+      document.getElementById('selected-pin-display').innerText = emoji;
+      window.selectedPinEmoji = emoji;
+    }
+
+    // Save profile
+    async function saveProfile() {
+      if (!currentUser) return;
+
+      const nickname = document.getElementById('profile-nickname').value.trim();
+      const email = document.getElementById('profile-email').value.trim();
+      const pinEmoji = window.selectedPinEmoji || '📍';
+
+      const saveBtn = document.getElementById('save-profile-btn');
+      const originalText = saveBtn.innerText;
+      saveBtn.disabled = true;
+      saveBtn.innerText = 'Sparar...';
+
+      try {
+        // Validate email if provided
+        if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+          alert('Ogiltig e-postadress.');
+          return;
+        }
+
+        const payload = {
+          id: currentUser.id,
+          nickname: nickname,
+          contact_email: email,
+          pin_emoji: pinEmoji,
+          avatar_url: currentUser.user_metadata?.avatar_url || '',
+          updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabaseClient.from('profiles').upsert(payload);
+        
+        if (error) throw error;
+
+        userProfile = payload;
+        alert('Profil sparad!');
+        closeProfileModal();
+        await loadPins(); // Reload pins to update emoji on map
+      } catch (error) {
+        console.error('Save profile error:', error);
+        alert('Fel: ' + (error.message || 'Kunde inte spara profil'));
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = originalText;
+      }
     }
 
     // Open terms modal
