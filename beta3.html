@@ -176,6 +176,7 @@
       </div>
     </div>
   </div>
+
   <div id="terms-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-800 flex justify-between items-center">
@@ -237,10 +238,15 @@
     function initializeMap() {
       map = L.map('map', { 
         zoomControl: false,
-        maxBounds: [[-90, -180], [90, 180]],
-        maxBoundsViscosity: 1.0
+        minZoom: 2,
+        worldCopyJump: true // Gör att kartan fyller ut sömlöst i sidled utan grå fält
       }).setView([20, 0], 3);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 15, noWrap: true }).addTo(map);
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
+        maxZoom: 15,
+        noWrap: false 
+      }).addTo(map);
+
       markersLayer = L.layerGroup().addTo(map);
       setTimeout(() => map.invalidateSize(), 150);
     }
@@ -348,7 +354,6 @@
       });
 
       Object.values(locationsMap).forEach(loc => {
-        // Use the first review's profile emoji, or default to pin emoji
         let emoji = loc.reviews[0]?.profile?.pin_emoji || '📍';
         
         let marker = L.marker([loc.lat, loc.lng], {
@@ -680,7 +685,6 @@
 
       document.getElementById('profile-modal').classList.remove('hidden');
       
-      // Show avatar from Google auth (not from database)
       if (currentUser.user_metadata?.avatar_url) {
         document.getElementById('profile-avatar-preview').src = currentUser.user_metadata.avatar_url;
       }
@@ -694,11 +698,9 @@
           userProfile = data;
           document.getElementById('profile-nickname').value = data.nickname || '';
           
-          // Set selected pin emoji
           const selectedEmoji = data.pin_emoji || '📍';
           updatePinEmojiSelection(selectedEmoji);
         } else {
-          // New user - set defaults
           updatePinEmojiSelection('📍');
         }
       } catch (error) {
@@ -718,20 +720,17 @@
 
     // Update pin emoji selection UI
     function updatePinEmojiSelection(emoji) {
-      // Remove active state from all buttons
       document.querySelectorAll('[id^="pin-emoji-"]').forEach(btn => {
         btn.classList.remove('bg-indigo-600', 'border-indigo-500');
         btn.classList.add('bg-slate-800', 'border-slate-700');
       });
 
-      // Add active state to selected button
       const selectedBtn = document.getElementById(`pin-emoji-${emoji}`);
       if (selectedBtn) {
         selectedBtn.classList.remove('bg-slate-800', 'border-slate-700');
         selectedBtn.classList.add('bg-indigo-600', 'border-indigo-500');
       }
 
-      // Update display
       document.getElementById('selected-pin-display').innerText = emoji;
       window.selectedPinEmoji = emoji;
     }
@@ -743,10 +742,9 @@
       const nickname = document.getElementById('profile-nickname').value.trim();
       const pinEmoji = window.selectedPinEmoji || '📍';
 
-      // Validate nickname - must be single word (no spaces)
       if (nickname) {
         if (nickname.includes(' ')) {
-          alert('❌ Smeknamnet får bara innehålla ett ord (ingen mellanslag). Exempel: "Jasmin" eller "Nomad_Jasmin"');
+          alert('❌ Smeknamnet får bara innehålla ett ord (inga mellanslag). Exempel: "Jasmin" eller "Nomad_Jasmin"');
           return;
         }
         
@@ -767,7 +765,6 @@
       saveBtn.innerText = 'Sparar...';
 
       try {
-        // Only save nickname and pin_emoji - avatar comes from Google auth
         const payload = {
           id: currentUser.id,
           nickname: nickname,
@@ -782,7 +779,7 @@
         userProfile = payload;
         alert('Profil sparad!');
         closeProfileModal();
-        await loadPins(); // Reload pins to update emoji on map
+        await loadPins();
       } catch (error) {
         console.error('Save profile error:', error);
         alert('Fel: ' + (error.message || 'Kunde inte spara profil'));
