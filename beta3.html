@@ -1,863 +1,136 @@
 <!DOCTYPE html>
-<html lang="sv" class="h-full w-full">
+<html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="VistMe - Resenärernas Twitter. Dela tillfälliga tips och upplevelser på världskartan. Upptäck vad andra resenärer tycker om olika platser.">
-  <meta name="keywords" content="resor, tips, platser, världskarta, resenärer, reseblogg, destinationer">
-  <meta name="author" content="VistMe">
-  <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#0b0f19">
-  
-  <!-- Open Graph för social media -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="VistMe — Resenärernas Twitter">
-  <meta property="og:description" content="Dela tillfälliga tips och sätt dina egna Post-its på världskartan. Upptäck vad andra resenärer tycker.">
-  <meta property="og:url" content="https://jsthi.github.io/vistme/">
-  <meta property="og:image" content="https://jsthi.github.io/vistme/og-image.png">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="VistMe — Resenärernas Twitter">
-  <meta name="twitter:description" content="Dela tillfälliga tips och sätt dina egna Post-its på världskartan.">
-  
-  <title>VistMe — Resenärernas Twitter (Beta)</title>
-  
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XQTMCPWMKP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-XQTMCPWMKP');
-  </script>
-  
-  <!-- Schema.org Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "VistMe",
-    "description": "Resenärernas Twitter - Dela tillfälliga tips och upplevelser på världskartan",
-    "url": "https://jsthi.github.io/vistme/",
-    "applicationCategory": "TravelApplication",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "SEK"
-    },
-    "creator": {
-      "@type": "Organization",
-      "name": "VistMe"
-    }
-  }
-  </script>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #0b0f19; }
-    #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; background: #0b0f19; }
-    .leaflet-tile-pane { filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8); transition: filter 0.3s ease; }
-    .custom-map-pin { background: transparent !important; border: none !important; }
-    #intro-splash { transition: opacity 0.3s ease, transform 0.3s ease; }
-    #intro-splash.fade-out { opacity: 0; transform: scale(1.05); pointer-events: none; }
-    .btn-loading { opacity: 0.7; pointer-events: none; }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 font-sans h-full w-full relative">
-  
-  <!-- Intro Splash -->
-  <div id="intro-splash" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
-    <div class="bg-slate-900/85 border border-slate-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6">
-      <div class="inline-flex p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-4xl">📌</div>
-      <div class="space-y-2">
-        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">VistMe</h1>
-        <p class="text-xs font-medium uppercase tracking-widest text-indigo-400">Resenärernas Twitter</p>
-        <p class="text-sm text-slate-300 pt-2 leading-relaxed">Dela tillfälliga tips och sätt dina egna Post-its på världskartan.</p>
-      </div>
-      <button onclick="closeIntroSplash()" class="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg cursor-pointer text-sm hover:from-indigo-500 hover:to-cyan-500 transition">Utforska kartan 🚀</button>
-      <button onclick="openTermsModal()" class="w-full text-indigo-300 hover:text-indigo-200 text-xs underline cursor-pointer transition">Villkor & Integritet</button>
-    </div>
-  </div>
-
-  <!-- Header -->
-  <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">📌</span>
-      <button onclick="openMyPinsModal()" class="text-xs bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 px-3 py-2 rounded-xl font-medium cursor-pointer transition">📌 Mina Post-its</button>
-      <button id="admin-reports-btn" onclick="openAdminModal()" class="hidden text-xs bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/40 text-rose-200 px-3 py-2 rounded-xl font-medium cursor-pointer transition">🚨 Anmälningar</button>
-      <button onclick="openTermsModal()" class="text-xs text-slate-400 hover:text-slate-300 px-3 py-2 cursor-pointer transition">Villkor</button>
-    </div>
-    <div class="flex items-center gap-2">
-      <button id="login-btn" onclick="loginWithGoogle()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition">Logga in</button>
-      <div id="user-profile" class="hidden flex items-center gap-2">
-        <img id="header-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border border-indigo-500/40 object-cover cursor-pointer hover:border-indigo-500 transition" onclick="openProfileModal()">
-        <button onclick="logout()" class="text-xs text-slate-400 hover:text-white cursor-pointer px-1 transition">Logga ut</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Map Container -->
-  <div id="map"></div>
-
-  <!-- Create Pin Button -->
-  <button onclick="openPinModal()" class="fixed bottom-6 right-6 z-10 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold cursor-pointer transition">
-    <span class="text-xl">✍️</span>
-    <span class="hidden sm:inline">Skriv Post-it</span>
-  </button>
-
-  <!-- My Pins Modal -->
-  <div id="mypins-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-        <h2 class="text-xl font-bold text-indigo-300">Dina aktiva Post-its</h2>
-        <button onclick="closeMyPinsModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
-      </div>
-      <div id="mypins-list-container" class="p-6 overflow-y-auto space-y-4 flex-1"></div>
-      <div class="p-4 border-t border-slate-800 flex justify-end">
-        <button onclick="closeMyPinsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm cursor-pointer transition">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Admin Reports Modal -->
-  <div id="admin-reports-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-        <h2 class="text-xl font-bold text-rose-400">🚨 Anmälda inlägg</h2>
-        <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
-      </div>
-      <div id="admin-reports-container" class="p-6 overflow-y-auto space-y-4 flex-1"></div>
-      <div class="p-4 border-t border-slate-800 flex justify-end">
-        <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm cursor-pointer transition">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Create/Edit Pin Modal -->
-  <div id="pin-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl flex flex-col p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-indigo-300">Skriv din Post-it</h2>
-        <button onclick="closePinModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
-      </div>
-      <div class="space-y-4 overflow-y-auto flex-1">
-        <input type="text" id="location-input" placeholder="Stad / Plats" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
-        <textarea id="review-like" maxlength="300" rows="2" placeholder="👍 Jag tycker..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm resize-none focus:border-indigo-500 focus:outline-none transition"></textarea>
-        <textarea id="review-dislike" maxlength="300" rows="2" placeholder="👎 Jag tycker inte om..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm resize-none focus:border-indigo-500 focus:outline-none transition"></textarea>
-        <textarea id="review-recommend" maxlength="300" rows="2" placeholder="⭐ Jag rekommenderar..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm resize-none focus:border-indigo-500 focus:outline-none transition"></textarea>
-      </div>
-      <div class="flex gap-3 mt-6 pt-4 border-t border-slate-800">
-        <button id="save-pin-btn" onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold cursor-pointer text-sm transition">Spara Post-it</button>
-        <button onclick="closePinModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl text-sm cursor-pointer transition">Avbryt</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Location Details Modal -->
-  <div id="location-modal" class="fixed inset-0 z-30 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-        <h2 id="location-modal-title" class="text-xl font-bold text-indigo-300">Plats</h2>
-        <button onclick="closeLocationModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
-      </div>
-      <div id="location-reviews-list" class="p-6 overflow-y-auto space-y-4 flex-1"></div>
-      <div class="p-4 border-t border-slate-800 flex justify-end">
-        <button onclick="closeLocationModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm cursor-pointer transition">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- User Profile Modal -->
-  <div id="profile-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl shadow-2xl flex flex-col p-6">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold text-indigo-300">Din Profil</h2>
-        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
-      </div>
-
-      <div class="space-y-6">
-        <!-- Avatar -->
-        <div class="flex justify-center">
-          <img id="profile-avatar-preview" src="" alt="Avatar" class="w-20 h-20 rounded-full border-2 border-indigo-500/40 object-cover">
-        </div>
-
-        <!-- Nickname -->
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-300">Smeknamn (ett ord, max 20 tecken)</label>
-          <input type="text" id="profile-nickname" placeholder="Nomad eller Traveler" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
-          <p class="text-xs text-slate-500">⚠️ Använd ett smeknamn, INTE ditt riktiga namn. Du är ansvarig för vad du fyller i.</p>
-        </div>
-
-        <!-- Pin Emoji Selector -->
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-300">Välj din nål-emoji</label>
-          <div class="grid grid-cols-6 gap-2">
-            <button onclick="selectPinEmoji('📍')" id="pin-emoji-📍" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">📍</button>
-            <button onclick="selectPinEmoji('✈️')" id="pin-emoji-✈️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">✈️</button>
-            <button onclick="selectPinEmoji('🧳')" id="pin-emoji-🧳" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🧳</button>
-            <button onclick="selectPinEmoji('🌍')" id="pin-emoji-🌍" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🌍</button>
-            <button onclick="selectPinEmoji('🗺️')" id="pin-emoji-🗺️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🗺️</button>
-            <button onclick="selectPinEmoji('🚀')" id="pin-emoji-🚀" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🚀</button>
-            <button onclick="selectPinEmoji('🎒')" id="pin-emoji-🎒" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🎒</button>
-            <button onclick="selectPinEmoji('🏖️')" id="pin-emoji-🏖️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🏖️</button>
-            <button onclick="selectPinEmoji('🚂')" id="pin-emoji-🚂" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🚂</button>
-            <button onclick="selectPinEmoji('🚴')" id="pin-emoji-🚴" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🚴</button>
-            <button onclick="selectPinEmoji('🚗')" id="pin-emoji-🚗" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🚗</button>
-            <button onclick="selectPinEmoji('🏍️')" id="pin-emoji-🏍️" class="bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-lg transition cursor-pointer">🏍️</button>
-          </div>
-          <div class="text-xs text-slate-400 text-center">Vald nål: <span id="selected-pin-display">📍</span></div>
-        </div>
-
-        <!-- GDPR Info -->
-        <div class="bg-slate-800/50 border border-slate-700/50 p-3 rounded-xl text-xs text-slate-400">
-          <p>🔒 Du är själv ansvarig för vad du fyller i. Använd ett smeknamn, INTE ditt riktiga namn eller känslig data.</p>
-        </div>
-      </div>
-
-      <div class="flex gap-3 mt-6 pt-6 border-t border-slate-800">
-        <button id="save-profile-btn" onclick="saveProfile()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold cursor-pointer text-sm transition">Spara Profil</button>
-        <button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl text-sm cursor-pointer transition">Stäng</button>
-      </div>
-    </div>
-  </div>
-  <div id="terms-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-      <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-        <h2 class="text-xl font-bold text-indigo-300">Villkor & Integritet</h2>
-        <button onclick="closeTermsModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer transition">✕</button>
-      </div>
-      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm text-slate-300">
-        
-        <div class="space-y-2">
-          <h3 class="font-bold text-indigo-300">Syfte</h3>
-          <p>VistMe (<span class="italic">"Skapad för resetwitters av resetwitters"</span>) är en plattform för resenärer att dela tillfälliga tips och upplevelser kopplat till platser på kartan.</p>
-        </div>
-
-        <div class="space-y-2">
-          <h3 class="font-bold text-indigo-300">Färskvara</h3>
-          <p>Inlägg raderas automatiskt efter 14 dagar för att hålla kartan levande och aktuell.</p>
-        </div>
-
-        <div class="space-y-2">
-          <h3 class="font-bold text-indigo-300">Integritet & GDPR</h3>
-          <p>Vi sparar ingen känslig personlig data. Smeknamn är valfritt, och e-postadress är helt frivillig.</p>
-        </div>
-
-        <div class="space-y-2">
-          <h3 class="font-bold text-indigo-300">Ansvar</h3>
-          <p>Håll en trevlig ton, dela schyssta tips och sprid god stämning!</p>
-        </div>
-
-        <div class="space-y-2">
-          <h3 class="font-bold text-rose-300">⚠️ Du är ansvarig för dina uppgifter</h3>
-          <p>Du är själv ansvarig för vad du fyller i ditt smeknamn och i dina Post-its. Skriv ALDRIG ditt riktiga namn, e-postadress, telefonnummer eller annan känslig personlig data. VistMe tar INGET ansvar för information som du själv publicerar eller fyller i.</p>
-        </div>
-
-        <div class="pt-4 border-t border-slate-700/50 text-xs text-slate-400">
-          <p>Genom att använda VistMe accepterar du dessa villkor.</p>
-        </div>
-      </div>
-      <div class="p-4 border-t border-slate-800 flex justify-end">
-        <button onclick="closeTermsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2.5 rounded-xl text-sm cursor-pointer transition">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const SUPABASE_URL = 'https://uzadvxbtgrkmuagjtkfr.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_XGnBn__01QbbtlfOBOv2ng_EM8LrAXi';
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VistMe – Digital Korktavla</title>
     
-    let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    let map, currentUser = null, markersLayer = null, userProfile = null, editingPinId = null, allPinsData = [];
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    // Initialize app on page load
-    window.addEventListener('DOMContentLoaded', () => {
-      initializeMap();
-      setupAuthListener();
-      loadPins();
-    });
-
-    // Initialize map
-    function initializeMap() {
-      map = L.map('map', { 
-        zoomControl: false,
-        maxBounds: [[-90, -180], [90, 180]],
-        maxBoundsViscosity: 1.0,
-        minZoom: 2
-      }).setView([20, 0], 3);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 15, noWrap: true }).addTo(map);
-      markersLayer = L.layerGroup().addTo(map);
-      setTimeout(() => map.invalidateSize(), 150);
-    }
-
-    // Setup authentication listener
-    function setupAuthListener() {
-      supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (session) {
-          currentUser = session.user;
-          document.getElementById('login-btn').classList.add('hidden');
-          document.getElementById('user-profile').classList.remove('hidden');
-          if (session.user.user_metadata?.avatar_url) {
-            document.getElementById('header-avatar').src = session.user.user_metadata.avatar_url;
-          }
-          fetchUserProfile(session.user.id);
-        } else {
-          currentUser = null;
-          document.getElementById('login-btn').classList.remove('hidden');
-          document.getElementById('user-profile').classList.add('hidden');
-          document.getElementById('admin-reports-btn').classList.add('hidden');
+    <style>
+        /* Gör så att kartan fyller hela skärmen bakom gränssnittet */
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 0;
         }
-      });
-    }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans h-screen overflow-hidden">
 
-    // Fetch user profile
-    async function fetchUserProfile(userId) {
-      try {
-        const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
-        if (error) throw error;
-        if (data) {
-          userProfile = data;
-          if (data.role === 'admin' || data.role === 'super_admin') {
-            document.getElementById('admin-reports-btn').classList.remove('hidden');
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    }
+    <!-- Karta (Bakgrund) -->
+    <div id="map"></div>
 
-    // Login with Google
-    async function loginWithGoogle() {
-      try {
-        await supabaseClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-      } catch (error) {
-        console.error('Login error:', error);
-        alert('Inloggningen misslyckades. Försök igen.');
-      }
-    }
+    <!-- Toppmeny / Header (Flytande) -->
+    <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
+        <div class="bg-gray-900/90 backdrop-blur border border-gray-800 px-4 py-2 rounded-2xl shadow-xl pointer-events-auto flex items-center gap-2">
+            <span class="text-amber-400 text-lg">📌</span>
+            <h1 class="font-bold text-sm tracking-wide text-gray-100">VistMe</h1>
+        </div>
+        <div class="bg-gray-900/90 backdrop-blur border border-gray-800 px-4 py-2 rounded-2xl shadow-xl pointer-events-auto text-xs text-gray-400">
+            📍 Larnaca
+        </div>
+    </header>
 
-    // Logout
-    async function logout() {
-      try {
-        await supabaseClient.auth.signOut();
-        window.location.reload();
-      } catch (error) {
-        console.error('Logout error:', error);
-        alert('Utloggningen misslyckades.');
-      }
-    }
+    <!-- Instruktion / Tips i botten -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <div class="bg-gray-900/90 backdrop-blur border border-gray-800 px-4 py-2 rounded-full shadow-2xl pointer-events-auto text-xs text-gray-300 text-center">
+            Klicka var som helst på kartan för att sätta upp en lapp! 📌
+        </div>
+    </div>
 
-    // Load all pins
-    async function loadPins() {
-      try {
-        const { data: pins, error: pinsError } = await supabaseClient.from('user_pins').select('*');
-        if (pinsError) throw pinsError;
+    <!-- Modal / Inmatningsruta (Dold som standard) -->
+    <div id="postModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl text-gray-100 relative animate-in fade-in zoom-in-95 duration-150">
+            
+            <!-- Stäng-knapp -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
 
-        const { data: profiles, error: profilesError } = await supabaseClient.from('profiles').select('*');
-        if (profilesError) throw profilesError;
+            <!-- Rubrik / Ledande fråga -->
+            <h3 class="text-lg font-semibold mb-1 text-amber-400">Vad är ditt bästa tips här idag?</h3>
+            <p id="coordLabel" class="text-xs text-gray-400 mb-4">📍 Vald plats på kartan</p>
 
-        let profilesMap = {};
-        if (profiles) {
-          profiles.forEach(p => profilesMap[p.id] = {
-            nickname: p.nickname || 'Anonym',
-            pin_emoji: p.pin_emoji || '📍'
-          });
-        }
+            <!-- Det enda fria textfältet (inga uppdelade fält) -->
+            <textarea 
+                id="postText"
+                rows="4" 
+                class="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-400 resize-none"
+                placeholder="Skriv ditt tips, en varning eller något kul som händer..."
+            ></textarea>
 
-        allPinsData = (pins || []).map(pin => ({
-          ...pin,
-          profile: profilesMap[pin.user_id] || { nickname: 'Anonym', pin_emoji: '📍' }
-        }));
-
-        renderMapPins();
-      } catch (error) {
-        console.error('Error loading pins:', error);
-      }
-    }
-
-    // Render pins on map
-    function renderMapPins() {
-      markersLayer.clearLayers();
-      let locationsMap = {};
-
-      allPinsData.forEach(pin => {
-        if (!locationsMap[pin.location_name]) {
-          locationsMap[pin.location_name] = {
-            display_name: pin.display_name,
-            lat: pin.lat,
-            lng: pin.lng,
-            reviews: []
-          };
-        }
-        locationsMap[pin.location_name].reviews.push(pin);
-      });
-
-      Object.values(locationsMap).forEach(loc => {
-        // Use the first review's profile emoji, or default to pin emoji
-        let emoji = loc.reviews[0]?.profile?.pin_emoji || '📍';
-        
-        let marker = L.marker([loc.lat, loc.lng], {
-          icon: L.divIcon({
-            className: 'custom-map-pin',
-            html: `<div style="font-size:28px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.5)); transform: translateY(-5px);">${emoji}</div>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 30]
-          })
-        }).addTo(markersLayer);
-
-        marker.on('click', () => showLocationDetails(loc));
-      });
-    }
-
-    // Show location details modal
-    function showLocationDetails(loc) {
-      document.getElementById('location-modal-title').innerText = loc.display_name;
-      let list = document.getElementById('location-reviews-list');
-      list.innerHTML = '';
-
-      if (!loc.reviews || loc.reviews.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 text-sm text-center py-6">Inga recensioner ännu.</p>';
-        document.getElementById('location-modal').classList.remove('hidden');
-        return;
-      }
-
-      loc.reviews.forEach(review => {
-        let isOwner = currentUser && review.user_id === currentUser.id;
-        let isAdmin = userProfile && (userProfile.role === 'admin' || userProfile.role === 'super_admin');
-
-        let contentHtml = buildReviewContent(review);
-        let actionButtonsHtml = buildActionButtons(review, isOwner, isAdmin);
-
-        let div = document.createElement('div');
-        div.className = 'bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-xs space-y-2';
-        div.innerHTML = `
-          <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-sm text-indigo-400">${escapeHtml(review.profile.nickname)}</span>
-            <span class="text-slate-400 text-[10px]">${new Date(review.updated_at).toLocaleDateString('sv-SE')}</span>
-          </div>
-          ${contentHtml}
-          ${actionButtonsHtml}
-        `;
-
-        // Attach event listeners
-        const editBtn = div.querySelector('[data-action="edit"]');
-        if (editBtn) {
-          editBtn.addEventListener('click', () => {
-            closeLocationModal();
-            editPinById(review.id, review);
-          });
-        }
-
-        const deleteBtn = div.querySelector('[data-action="delete"]');
-        if (deleteBtn) {
-          deleteBtn.addEventListener('click', () => {
-            deletePin(review.id);
-          });
-        }
-
-        list.appendChild(div);
-      });
-
-      document.getElementById('location-modal').classList.remove('hidden');
-    }
-
-    // Build review content HTML
-    function buildReviewContent(review) {
-      if (!review.review_like && !review.review_dislike && !review.review_recommend) {
-        return '<div class="text-slate-500 italic">Ingen recension angiven.</div>';
-      }
-
-      const likeHtml = review.review_like
-        ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(review.review_like)}</div>`
-        : '';
-
-      const dislikeHtml = review.review_dislike
-        ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(review.review_dislike)}</div>`
-        : '';
-
-      const recommendHtml = review.review_recommend
-        ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(review.review_recommend)}</div>`
-        : '';
-
-      return `${likeHtml}${dislikeHtml}${recommendHtml}`;
-    }
-
-    // Build action buttons HTML
-    function buildActionButtons(review, isOwner, isAdmin) {
-      if (!isOwner && !isAdmin) return '';
-
-      let html = '<div class="pt-2 border-t border-slate-700/50 flex gap-2">';
-      
-      if (isOwner) {
-        html += '<button type="button" data-action="edit" class="text-indigo-400 hover:text-indigo-300 cursor-pointer font-medium transition">Redigera</button>';
-      }
-      
-      if (isOwner || isAdmin) {
-        html += '<button type="button" data-action="delete" class="text-rose-400 hover:text-rose-300 cursor-pointer font-medium transition">Radera</button>';
-      }
-      
-      html += '</div>';
-      return html;
-    }
-
-    // Edit pin
-    function editPinById(pinId, pin) {
-      if (!pin) return;
-      editingPinId = pinId;
-      document.getElementById('location-input').value = pin.display_name;
-      document.getElementById('review-like').value = pin.review_like || '';
-      document.getElementById('review-dislike').value = pin.review_dislike || '';
-      document.getElementById('review-recommend').value = pin.review_recommend || '';
-      document.getElementById('pin-modal').classList.remove('hidden');
-    }
-
-    // Delete pin
-    async function deletePin(pinId) {
-      if (!confirm('Radera denna Post-it? Detta kan inte ångras.')) return;
-
-      try {
-        const { error } = await supabaseClient.from('user_pins').delete().eq('id', pinId);
-        if (error) throw error;
-
-        alert('Raderat!');
-        await loadPins();
-        closeLocationModal();
-        closeMyPinsModal();
-      } catch (error) {
-        console.error('Delete error:', error);
-        alert('Kunde inte radera: ' + (error.message || 'Okänt fel'));
-      }
-    }
-
-    // Save pin (create or update)
-    async function savePin() {
-      if (!currentUser) {
-        alert('Du måste logga in för att spara en Post-it.');
-        return;
-      }
-
-      let rawLocation = document.getElementById('location-input').value.trim();
-      let likeText = document.getElementById('review-like').value.trim();
-      let dislikeText = document.getElementById('review-dislike').value.trim();
-      let recommendText = document.getElementById('review-recommend').value.trim();
-
-      if (!rawLocation || (!likeText && !dislikeText && !recommendText)) {
-        alert('Fyll i plats samt minst ett textfält!');
-        return;
-      }
-
-      const saveBtn = document.getElementById('save-pin-btn');
-      const originalText = saveBtn.innerText;
-      saveBtn.disabled = true;
-      saveBtn.classList.add('btn-loading');
-      saveBtn.innerText = 'Sparar...';
-
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(rawLocation)}`);
-
-        if (!res.ok) {
-          throw new Error('Kartservern är inte tillgänglig just nu. Försök igen senare.');
-        }
-
-        const data = await res.json();
-        if (!data || data.length === 0) {
-          alert('Hittade inte platsen. Försök med ett större område eller stad.');
-          return;
-        }
-
-        let payload = {
-          user_id: currentUser.id,
-          location_name: rawLocation.toLowerCase().replace(/[^a-z0-9]/g, ''),
-          display_name: data[0].display_name.split(',')[0],
-          review_like: likeText,
-          review_dislike: dislikeText,
-          review_recommend: recommendText,
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-          updated_at: new Date().toISOString()
-        };
-
-        let result;
-        if (editingPinId) {
-          result = await supabaseClient.from('user_pins').update(payload).eq('id', editingPinId);
-        } else {
-          result = await supabaseClient.from('user_pins').insert(payload);
-        }
-
-        if (result.error) {
-          throw result.error;
-        }
-
-        alert(editingPinId ? 'Post-it uppdaterad!' : 'Post-it sparad!');
-        editingPinId = null;
-        closePinModal();
-        await loadPins();
-      } catch (error) {
-        console.error('Save error:', error);
-        alert('Fel: ' + (error.message || 'Okänt fel uppstod'));
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.classList.remove('btn-loading');
-        saveBtn.innerText = originalText;
-      }
-    }
-
-    // Open pin modal
-    function openPinModal() {
-      if (!currentUser) {
-        alert('Du måste logga in för att skriva en Post-it.');
-        return;
-      }
-      editingPinId = null;
-      document.getElementById('location-input').value = '';
-      document.getElementById('review-like').value = '';
-      document.getElementById('review-dislike').value = '';
-      document.getElementById('review-recommend').value = '';
-      document.getElementById('pin-modal').classList.remove('hidden');
-    }
-
-    // Close pin modal
-    function closePinModal() {
-      document.getElementById('pin-modal').classList.add('hidden');
-    }
-
-    // Close location modal
-    function closeLocationModal() {
-      document.getElementById('location-modal').classList.add('hidden');
-    }
-
-    // Close intro splash
-    function closeIntroSplash() {
-      const splash = document.getElementById('intro-splash');
-      splash.classList.add('fade-out');
-      splash.style.pointerEvents = 'none';
-      setTimeout(() => {
-        splash.style.display = 'none';
-      }, 300);
-    }
-
-    // Open my pins modal
-    async function openMyPinsModal() {
-      if (!currentUser) {
-        alert('Du måste logga in för att se dina Post-its.');
-        return;
-      }
-
-      document.getElementById('mypins-modal').classList.remove('hidden');
-      let container = document.getElementById('mypins-list-container');
-      container.innerHTML = '<p class="text-slate-400 text-center py-6">Laddar...</p>';
-
-      try {
-        const { data, error } = await supabaseClient.from('user_pins').select('*').eq('user_id', currentUser.id);
-        if (error) throw error;
-
-        container.innerHTML = '';
-
-        if (!data || data.length === 0) {
-          container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-6">Du har inga aktiva Post-its än.</p>';
-          return;
-        }
-
-        data.forEach(pin => {
-          let div = document.createElement('div');
-          div.className = 'bg-slate-800 p-4 rounded-xl text-xs space-y-2';
-
-          const likeHtml = pin.review_like
-            ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(pin.review_like)}</div>`
-            : '';
-
-          const dislikeHtml = pin.review_dislike
-            ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(pin.review_dislike)}</div>`
-            : '';
-
-          const recommendHtml = pin.review_recommend
-            ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(pin.review_recommend)}</div>`
-            : '';
-
-          div.innerHTML = `
-            <div class="font-bold text-indigo-300 text-sm">${escapeHtml(pin.display_name)}</div>
-            ${likeHtml}
-            ${dislikeHtml}
-            ${recommendHtml}
-            <div class="flex gap-2 pt-2 border-t border-slate-700">
-              <button type="button" data-action="edit" class="text-indigo-400 hover:text-indigo-300 cursor-pointer font-medium transition">Redigera</button>
-              <button type="button" data-action="delete" class="text-rose-400 hover:text-rose-300 cursor-pointer font-medium transition">Radera</button>
+            <!-- Bottenpanel med spar-knapp -->
+            <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                <span class="text-xs text-gray-500">Färskvara</span>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">Avbryt</button>
+                    <button onclick="savePost()" class="px-4 py-2 rounded-xl text-sm bg-amber-500 text-gray-950 font-semibold hover:bg-amber-400 transition">Sätt upp lapp</button>
+                </div>
             </div>
-          `;
 
-          div.querySelector('[data-action="edit"]').addEventListener('click', () => {
-            closeMyPinsModal();
-            editPinById(pin.id, pin);
-          });
+        </div>
+    </div>
 
-          div.querySelector('[data-action="delete"]').addEventListener('click', () => {
-            deletePin(pin.id);
-          });
+    <!-- JavaScript för Karta och Interaktion -->
+    <script>
+        // Initiera kartan centrerad i Larnaca
+        const map = L.map('map', { zoomControl: false }).setView([34.9228, 33.6233], 14);
 
-          container.appendChild(div);
+        // Lägg till mörk kartstil (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+        }).addTo(map);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        let clickedLat = null;
+        let clickedLng = null;
+        const modal = document.getElementById('postModal');
+        const postText = document.getElementById('postText');
+        const coordLabel = document.getElementById('coordLabel');
+
+        // Lyssna på klick på kartan
+        map.on('click', function(e) {
+            clickedLat = e.latlng.lat;
+            clickedLng = e.latlng.lng;
+            
+            coordLabel.innerText = `📍 Position: ${clickedLat.toFixed(4)}, ${clickedLng.toFixed(4)}`;
+            
+            postText.value = '';
+            modal.classList.remove('hidden');
+            postText.focus();
         });
-      } catch (error) {
-        console.error('Error loading pins:', error);
-        container.innerHTML = '<p class="text-rose-400 text-sm text-center py-6">Kunde inte ladda dina Post-its. Försök igen.</p>';
-      }
-    }
 
-    // Close my pins modal
-    function closeMyPinsModal() {
-      document.getElementById('mypins-modal').classList.add('hidden');
-    }
-
-    // Open admin modal (placeholder)
-    async function openAdminModal() {
-      document.getElementById('admin-reports-modal').classList.remove('hidden');
-      let container = document.getElementById('admin-reports-container');
-      container.innerHTML = '<p class="text-slate-400 text-center py-6">Admin-funktionen är under utveckling.</p>';
-    }
-
-    // Close admin modal
-    function closeAdminModal() {
-      document.getElementById('admin-reports-modal').classList.add('hidden');
-    }
-
-    // Open profile modal
-    async function openProfileModal() {
-      if (!currentUser) return;
-
-      document.getElementById('profile-modal').classList.remove('hidden');
-      
-      // Show avatar from Google auth (not from database)
-      if (currentUser.user_metadata?.avatar_url) {
-        document.getElementById('profile-avatar-preview').src = currentUser.user_metadata.avatar_url;
-      }
-      
-      try {
-        const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-        
-        if (error && error.code !== 'PGRST116') throw error;
-
-        if (data) {
-          userProfile = data;
-          document.getElementById('profile-nickname').value = data.nickname || '';
-          
-          // Set selected pin emoji
-          const selectedEmoji = data.pin_emoji || '📍';
-          updatePinEmojiSelection(selectedEmoji);
-        } else {
-          // New user - set defaults
-          updatePinEmojiSelection('📍');
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      }
-    }
-
-    // Close profile modal
-    function closeProfileModal() {
-      document.getElementById('profile-modal').classList.add('hidden');
-    }
-
-    // Select pin emoji
-    function selectPinEmoji(emoji) {
-      updatePinEmojiSelection(emoji);
-    }
-
-    // Update pin emoji selection UI
-    function updatePinEmojiSelection(emoji) {
-      // Remove active state from all buttons
-      document.querySelectorAll('[id^="pin-emoji-"]').forEach(btn => {
-        btn.classList.remove('bg-indigo-600', 'border-indigo-500');
-        btn.classList.add('bg-slate-800', 'border-slate-700');
-      });
-
-      // Add active state to selected button
-      const selectedBtn = document.getElementById(`pin-emoji-${emoji}`);
-      if (selectedBtn) {
-        selectedBtn.classList.remove('bg-slate-800', 'border-slate-700');
-        selectedBtn.classList.add('bg-indigo-600', 'border-indigo-500');
-      }
-
-      // Update display
-      document.getElementById('selected-pin-display').innerText = emoji;
-      window.selectedPinEmoji = emoji;
-    }
-
-    // Save profile
-    async function saveProfile() {
-      if (!currentUser) return;
-
-      const nickname = document.getElementById('profile-nickname').value.trim();
-      const pinEmoji = window.selectedPinEmoji || '📍';
-
-      // Validate nickname - must be single word (no spaces)
-      if (nickname) {
-        if (nickname.includes(' ')) {
-          alert('❌ Smeknamnet får bara innehålla ett ord (ingen mellanslag). Exempel: "Jasmin" eller "Nomad_Jasmin"');
-          return;
-        }
-        
-        if (nickname.length > 20) {
-          alert('❌ Smeknamnet får max vara 20 tecken.');
-          return;
+        // Stäng modalen
+        function closeModal() {
+            modal.classList.add('hidden');
         }
 
-        if (nickname.length < 2) {
-          alert('❌ Smeknamnet måste vara minst 2 tecken.');
-          return;
+        // Spara inlägget
+        function savePost() {
+            const text = postText.value.trim();
+            if(!text) {
+                alert('Skriv något på lappen först!');
+                return;
+            }
+
+            // Skapa markör på kartan
+            L.marker([clickedLat, clickedLng]).addTo(map)
+                .bindPopup(`<div style="color: #111; font-family: sans-serif;"><b>Post-it:</b><br>${text}</div>`)
+                .openPopup();
+
+            closeModal();
         }
-      }
-
-      const saveBtn = document.getElementById('save-profile-btn');
-      const originalText = saveBtn.innerText;
-      saveBtn.disabled = true;
-      saveBtn.innerText = 'Sparar...';
-
-      try {
-        // Only save nickname and pin_emoji - avatar comes from Google auth
-        const payload = {
-          id: currentUser.id,
-          nickname: nickname,
-          pin_emoji: pinEmoji,
-          updated_at: new Date().toISOString()
-        };
-
-        const { data, error } = await supabaseClient.from('profiles').upsert(payload);
-        
-        if (error) throw error;
-
-        userProfile = payload;
-        alert('Profil sparad!');
-        closeProfileModal();
-        await loadPins(); // Reload pins to update emoji on map
-      } catch (error) {
-        console.error('Save profile error:', error);
-        alert('Fel: ' + (error.message || 'Kunde inte spara profil'));
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerText = originalText;
-      }
-    }
-
-    // Open terms modal
-    function openTermsModal() {
-      document.getElementById('terms-modal').classList.remove('hidden');
-    }
-
-    // Close terms modal
-    function closeTermsModal() {
-      document.getElementById('terms-modal').classList.add('hidden');
-    }
-
-    // Escape HTML special characters
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-  </script>
+    </script>
 </body>
 </html>
