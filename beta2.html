@@ -815,13 +815,15 @@
     async function deletePin(pinId) {
       if (!confirm('Är du säker på att du vill radera denna Post-it?')) return;
 
+      console.log("Försöker radera pin med ID:", pinId);
+
       const { error } = await supabaseClient
         .from('user_pins')
         .delete()
-        .eq('id', pinId)
-        .eq('user_id', currentUser.id);
+        .eq('id', pinId);
 
       if (error) {
+        console.error("Supabase delete error:", error);
         alert('Kunde inte radera: ' + error.message);
       } else {
         alert('Post-it har raderats.');
@@ -875,7 +877,6 @@
         const reviewCard = document.createElement('div');
         reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative';
         
-        // Sparar undan recensionen säkert i ett globalt uppslag för att undvika citattecken-trubbel
         window._activeReviewsMap = window._activeReviewsMap || {};
         window._activeReviewsMap[review.id] = review;
 
@@ -987,8 +988,7 @@
               lng: lng,
               updated_at: new Date()
             })
-            .eq('id', editingPinId)
-            .eq('user_id', currentUser.id);
+            .eq('id', editingPinId);
         } else {
           result = await supabaseClient
             .from('user_pins')
@@ -1008,6 +1008,7 @@
         }
 
         if (result.error) {
+          console.error("Supabase save error:", result.error);
           alert('Ett fel uppstod: ' + result.error.message);
         } else {
           alert('Din Post-it har sparats!');
