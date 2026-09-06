@@ -14,7 +14,7 @@
     #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; background: #0b0f19; }
     .leaflet-tile-pane { filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8); transition: filter 0.3s ease; }
     .custom-map-pin { background: transparent !important; border: none !important; }
-    #intro-splash { transition: opacity 0.6s ease, transform 0.6s ease; }
+    #intro-splash { transition: opacity 0.3s ease, transform 0.3s ease; }
     #intro-splash.fade-out { opacity: 0; transform: scale(1.05); pointer-events: none; }
     .btn-loading { opacity: 0.7; pointer-events: none; }
   </style>
@@ -179,10 +179,7 @@
     // Initialize map
     function initializeMap() {
       map = L.map('map', { zoomControl: false }).setView([20, 0], 3);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
-        maxZoom: 15, 
-        noWrap: true 
-      }).addTo(map);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 15 }).addTo(map);
       markersLayer = L.layerGroup().addTo(map);
       setTimeout(() => map.invalidateSize(), 150);
     }
@@ -520,10 +517,12 @@
 
     // Close intro splash
     function closeIntroSplash() {
-      document.getElementById('intro-splash').classList.add('fade-out');
+      const splash = document.getElementById('intro-splash');
+      splash.classList.add('fade-out');
+      splash.style.pointerEvents = 'none';
       setTimeout(() => {
-        document.getElementById('intro-splash').style.display = 'none';
-      }, 600);
+        splash.style.display = 'none';
+      }, 300);
     }
 
     // Open my pins modal
