@@ -139,14 +139,8 @@
 
         <!-- Nickname -->
         <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-300">Smeknamn / Namn (valfritt)</label>
+          <label class="text-sm font-medium text-slate-300">Smeknamn (valfritt)</label>
           <input type="text" id="profile-nickname" placeholder="Nomad Jasmin" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
-        </div>
-
-        <!-- Email -->
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-300">Kontakt e-post (helt frivillig)</label>
-          <input type="email" id="profile-email" placeholder="optional@email.com" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
         </div>
 
         <!-- Pin Emoji Selector -->
@@ -171,7 +165,7 @@
 
         <!-- GDPR Info -->
         <div class="bg-slate-800/50 border border-slate-700/50 p-3 rounded-xl text-xs text-slate-400">
-          <p>📋 Valfritt att fylla i smeknamn och e-post. Vi sparar ingen känslig data och följer GDPR.</p>
+          <p>🔒 <strong>GDPR-säkerhet:</strong> Vi sparar bara ditt smeknamn och nål-emoji. Dela aldrig känslig personlig data i dina Post-its.</p>
         </div>
       </div>
 
@@ -207,6 +201,11 @@
         <div class="space-y-2">
           <h3 class="font-bold text-indigo-300">Ansvar</h3>
           <p>Håll en trevlig ton, dela schyssta tips och sprid god stämning!</p>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="font-bold text-rose-300">⚠️ Dela INTE känslig data</h3>
+          <p>Skriv ALDRIG e-postadresser, telefonnummer, fullständiga namn eller annan känslig personlig data i dina Post-its. Du är själv ansvarig för vad du publicerar. VistMe tar inget ansvar för data som användare själva delar.</p>
         </div>
 
         <div class="pt-4 border-t border-slate-700/50 text-xs text-slate-400">
@@ -686,7 +685,6 @@
         if (data) {
           userProfile = data;
           document.getElementById('profile-nickname').value = data.nickname || '';
-          document.getElementById('profile-email').value = data.contact_email || '';
           document.getElementById('profile-avatar-preview').src = data.avatar_url || (currentUser.user_metadata?.avatar_url || '');
           
           // Set selected pin emoji
@@ -694,6 +692,7 @@
           updatePinEmojiSelection(selectedEmoji);
         } else {
           // New user - set defaults
+          document.getElementById('profile-nickname').value = '';
           document.getElementById('profile-avatar-preview').src = currentUser.user_metadata?.avatar_url || '';
           updatePinEmojiSelection('📍');
         }
@@ -737,8 +736,14 @@
       if (!currentUser) return;
 
       const nickname = document.getElementById('profile-nickname').value.trim();
-      const email = document.getElementById('profile-email').value.trim();
       const pinEmoji = window.selectedPinEmoji || '📍';
+
+      // Warn if user enters full name (privacy risk)
+      if (nickname && nickname.split(' ').length >= 2) {
+        if (!confirm('⚠️ Du har skrivit ett fullt namn (för- och efternamn). För säkerhet rekommenderar vi bara att använda ett smeknamn.\n\nVill du fortsätta?')) {
+          return;
+        }
+      }
 
       const saveBtn = document.getElementById('save-profile-btn');
       const originalText = saveBtn.innerText;
@@ -746,16 +751,10 @@
       saveBtn.innerText = 'Sparar...';
 
       try {
-        // Validate email if provided
-        if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-          alert('Ogiltig e-postadress.');
-          return;
-        }
-
+        // Only save nickname and pin_emoji for privacy
         const payload = {
           id: currentUser.id,
           nickname: nickname,
-          contact_email: email,
           pin_emoji: pinEmoji,
           avatar_url: currentUser.user_metadata?.avatar_url || '',
           updated_at: new Date().toISOString()
