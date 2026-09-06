@@ -238,8 +238,8 @@
     function initializeMap() {
       map = L.map('map', { 
         zoomControl: false,
-        minZoom: 2,
-        worldCopyJump: true // Gör att kartan fyller ut sömlöst i sidled utan grå fält
+        minZoom: 3, // Förhindrar att kartan zoomas ut för långt så det svarta hålet uppstår
+        worldCopyJump: true 
       }).setView([20, 0], 3);
 
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { 
