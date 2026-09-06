@@ -140,8 +140,8 @@
         <!-- Nickname -->
         <div class="space-y-2">
           <label class="text-sm font-medium text-slate-300">Smeknamn (ett ord, max 20 tecken)</label>
-          <input type="text" id="profile-nickname" placeholder="Nomad eller Jasmin_89" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
-          <p class="text-xs text-slate-500">Exempel: "Traveler", "Nomad", "Jasmin_89" (ingen mellanslag)</p>
+          <input type="text" id="profile-nickname" placeholder="Nomad eller Traveler" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
+          <p class="text-xs text-slate-500">⚠️ Använd ett smeknamn, INTE ditt riktiga namn. Du är ansvarig för vad du fyller i.</p>
         </div>
 
         <!-- Pin Emoji Selector -->
@@ -166,7 +166,7 @@
 
         <!-- GDPR Info -->
         <div class="bg-slate-800/50 border border-slate-700/50 p-3 rounded-xl text-xs text-slate-400">
-          <p>🔒 <strong>GDPR-säkerhet:</strong> Vi sparar bara ditt smeknamn och nål-emoji. Dela aldrig känslig personlig data i dina Post-its.</p>
+          <p>🔒 Du är själv ansvarig för vad du fyller i. Använd ett smeknamn, INTE ditt riktiga namn eller känslig data.</p>
         </div>
       </div>
 
@@ -205,8 +205,8 @@
         </div>
 
         <div class="space-y-2">
-          <h3 class="font-bold text-rose-300">⚠️ Dela INTE känslig data</h3>
-          <p>Skriv ALDRIG e-postadresser, telefonnummer, fullständiga namn eller annan känslig personlig data i dina Post-its. Du är själv ansvarig för vad du publicerar. VistMe tar inget ansvar för data som användare själva delar.</p>
+          <h3 class="font-bold text-rose-300">⚠️ Du är ansvarig för dina uppgifter</h3>
+          <p>Du är själv ansvarig för vad du fyller i ditt smeknamn och i dina Post-its. Skriv ALDRIG ditt riktiga namn, e-postadress, telefonnummer eller annan känslig personlig data. VistMe tar INGET ansvar för information som du själv publicerar eller fyller i.</p>
         </div>
 
         <div class="pt-4 border-t border-slate-700/50 text-xs text-slate-400">
@@ -311,9 +311,7 @@
         if (profiles) {
           profiles.forEach(p => profilesMap[p.id] = {
             nickname: p.nickname || 'Anonym',
-            pin_emoji: p.pin_emoji || '📍',
-            avatar_url: p.avatar_url || '',
-            contact_email: p.contact_email || ''
+            pin_emoji: p.pin_emoji || '📍'
           });
         }
 
@@ -678,6 +676,11 @@
 
       document.getElementById('profile-modal').classList.remove('hidden');
       
+      // Show avatar from Google auth (not from database)
+      if (currentUser.user_metadata?.avatar_url) {
+        document.getElementById('profile-avatar-preview').src = currentUser.user_metadata.avatar_url;
+      }
+      
       try {
         const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
         
@@ -686,15 +689,12 @@
         if (data) {
           userProfile = data;
           document.getElementById('profile-nickname').value = data.nickname || '';
-          document.getElementById('profile-avatar-preview').src = data.avatar_url || (currentUser.user_metadata?.avatar_url || '');
           
           // Set selected pin emoji
           const selectedEmoji = data.pin_emoji || '📍';
           updatePinEmojiSelection(selectedEmoji);
         } else {
           // New user - set defaults
-          document.getElementById('profile-nickname').value = '';
-          document.getElementById('profile-avatar-preview').src = currentUser.user_metadata?.avatar_url || '';
           updatePinEmojiSelection('📍');
         }
       } catch (error) {
@@ -763,12 +763,11 @@
       saveBtn.innerText = 'Sparar...';
 
       try {
-        // Only save nickname and pin_emoji for privacy
+        // Only save nickname and pin_emoji - avatar comes from Google auth
         const payload = {
           id: currentUser.id,
           nickname: nickname,
           pin_emoji: pinEmoji,
-          avatar_url: currentUser.user_metadata?.avatar_url || '',
           updated_at: new Date().toISOString()
         };
 
