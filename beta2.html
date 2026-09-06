@@ -133,7 +133,7 @@
         <span>Mina Post-its</span>
       </button>
 
-      <!-- Admin-knapp (visas endast för admins) -->
+      <!-- Admin-knapp -->
       <button id="admin-reports-btn" onclick="openAdminModal()" class="hidden text-xs bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/40 text-rose-200 px-3 py-2 rounded-xl font-medium transition flex items-center gap-1.5 cursor-pointer shadow-md">
         <span>🚨</span>
         <span>Granska anmälningar</span>
@@ -875,11 +875,15 @@
         const reviewCard = document.createElement('div');
         reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative';
         
+        // Sparar undan recensionen säkert i ett globalt uppslag för att undvika citattecken-trubbel
+        window._activeReviewsMap = window._activeReviewsMap || {};
+        window._activeReviewsMap[review.id] = review;
+
         let actionButtons = '';
         if (isOwner || isAdmin) {
           actionButtons = `
             <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
-              ${isOwner ? `<button onclick="closeLocationModal(); editPin(${review.id}, '${escapeHtml(review.review_like || '').replace(/'/g, "\\'")}', '${escapeHtml(review.review_dislike || '').replace(/'/g, "\\'")}', '${escapeHtml(review.review_recommend || '').replace(/'/g, "\\'")}', '${escapeHtml(loc.display_name).replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button><span class="text-slate-600">|</span>` : ''}
+              ${isOwner ? `<button onclick="closeLocationModal(); editPinById(${review.id})" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button><span class="text-slate-600">|</span>` : ''}
               <button onclick="deletePin(${review.id})" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">${isAdmin && !isOwner ? '🗑️ Radera (Admin)' : 'Radera'}</button>
             </div>
           `;
@@ -912,6 +916,12 @@
       });
 
       document.getElementById('location-modal').classList.remove('hidden');
+    }
+
+    function editPinById(pinId) {
+      const pin = window._activeReviewsMap && window._activeReviewsMap[pinId];
+      if (!pin) return;
+      editPin(pin.id, pin.review_like || '', pin.review_dislike || '', pin.review_recommend || '', pin.display_name || '');
     }
 
     function escapeHtml(text) {
