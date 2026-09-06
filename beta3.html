@@ -139,8 +139,9 @@
 
         <!-- Nickname -->
         <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-300">Smeknamn (valfritt)</label>
-          <input type="text" id="profile-nickname" placeholder="Nomad Jasmin" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
+          <label class="text-sm font-medium text-slate-300">Smeknamn (ett ord, max 20 tecken)</label>
+          <input type="text" id="profile-nickname" placeholder="Nomad eller Jasmin_89" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-indigo-500 focus:outline-none transition">
+          <p class="text-xs text-slate-500">Exempel: "Traveler", "Nomad", "Jasmin_89" (ingen mellanslag)</p>
         </div>
 
         <!-- Pin Emoji Selector -->
@@ -738,9 +739,20 @@
       const nickname = document.getElementById('profile-nickname').value.trim();
       const pinEmoji = window.selectedPinEmoji || '📍';
 
-      // Warn if user enters full name (privacy risk)
-      if (nickname && nickname.split(' ').length >= 2) {
-        if (!confirm('⚠️ Du har skrivit ett fullt namn (för- och efternamn). För säkerhet rekommenderar vi bara att använda ett smeknamn.\n\nVill du fortsätta?')) {
+      // Validate nickname - must be single word (no spaces)
+      if (nickname) {
+        if (nickname.includes(' ')) {
+          alert('❌ Smeknamnet får bara innehålla ett ord (ingen mellanslag). Exempel: "Jasmin" eller "Nomad_Jasmin"');
+          return;
+        }
+        
+        if (nickname.length > 20) {
+          alert('❌ Smeknamnet får max vara 20 tecken.');
+          return;
+        }
+
+        if (nickname.length < 2) {
+          alert('❌ Smeknamnet måste vara minst 2 tecken.');
           return;
         }
       }
