@@ -186,6 +186,19 @@
         window._activeReviewsMap = window._activeReviewsMap || {};
         window._activeReviewsMap[review.id] = review;
 
+        let contentHtml = '';
+        if (review.review_like || review.review_dislike || review.review_recommend) {
+          contentHtml = `
+            ${review.review_like ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(review.review_like)}</div>` : ''}
+            ${review.review_dislike ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(review.review_dislike)}</div>` : ''}
+            ${review.review_recommend ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(review.review_recommend)}</div>` : ''}
+          `;
+        } else if (review.review_text) {
+          contentHtml = `<div><strong class="text-indigo-400">📝 Innehåll:</strong> ${escapeHtml(review.review_text)}</div>`;
+        } else {
+          contentHtml = `<div class="text-slate-500 italic">Ingen recension angiven.</div>`;
+        }
+
         let div = document.createElement('div');
         div.className = 'bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-xs space-y-2';
         div.innerHTML = `
@@ -193,9 +206,7 @@
             <span class="font-bold text-sm text-indigo-400">${escapeHtml(review.profile.nickname)}</span>
             <span class="text-slate-400 text-[10px]">${new Date(review.updated_at).toLocaleDateString()}</span>
           </div>
-          ${review.review_like ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(review.review_like)}</div>` : ''}
-          ${review.review_dislike ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(review.review_dislike)}</div>` : ''}
-          ${review.review_recommend ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(review.review_recommend)}</div>` : ''}
+          ${contentHtml}
           ${isOwner || isAdmin ? `<div class="pt-2 border-t border-slate-700/50 flex gap-2">${isOwner ? `<button onclick="closeLocationModal(); editPinById(${review.id})" class="text-indigo-400 cursor-pointer font-medium">Redigera</button>` : ''}<button onclick="deletePin(${review.id})" class="text-rose-400 cursor-pointer font-medium">Radera</button></div>` : ''}
         `;
         list.appendChild(div);
@@ -260,6 +271,7 @@
     function openPinModal() { editingPinId = null; document.getElementById('location-input').value = ''; document.getElementById('review-like').value = ''; document.getElementById('review-dislike').value = ''; document.getElementById('review-recommend').value = ''; document.getElementById('pin-modal').classList.remove('hidden'); }
     function closePinModal() { document.getElementById('pin-modal').classList.add('hidden'); }
     function closeLocationModal() { document.getElementById('location-modal').classList.add('hidden'); }
+    
     async function openMyPinsModal() {
       document.getElementById('mypins-modal').classList.remove('hidden');
       let container = document.getElementById('mypins-list-container');
@@ -277,9 +289,9 @@
         d.className = 'bg-slate-800 p-4 rounded-xl text-xs space-y-2';
         d.innerHTML = `
           <div class="font-bold text-indigo-300 text-sm">${escapeHtml(pin.display_name)}</div>
-          ${pin.review_like ? `<div><strong class="text-indigo-400">👍:</strong> ${escapeHtml(pin.review_like)}</div>` : ''}
-          ${pin.review_dislike ? `<div><strong class="text-rose-400">👎:</strong> ${escapeHtml(pin.review_dislike)}</div>` : ''}
-          ${pin.review_recommend ? `<div><strong class="text-amber-400">⭐:</strong> ${escapeHtml(pin.review_recommend)}</div>` : ''}
+          ${pin.review_like ? `<div><strong class="text-indigo-400">👍 Jag tycker:</strong> ${escapeHtml(pin.review_like)}</div>` : ''}
+          ${pin.review_dislike ? `<div><strong class="text-rose-400">👎 Jag tycker inte om:</strong> ${escapeHtml(pin.review_dislike)}</div>` : ''}
+          ${pin.review_recommend ? `<div><strong class="text-amber-400">⭐ Jag rekommenderar:</strong> ${escapeHtml(pin.review_recommend)}</div>` : ''}
           <div class="flex gap-2 pt-2 border-t border-slate-700">
             <button onclick="closeMyPinsModal(); editPinById(${pin.id})" class="text-indigo-400 cursor-pointer font-medium">Redigera</button>
             <button onclick="deletePin(${pin.id})" class="text-rose-400 cursor-pointer font-medium">Radera</button>
@@ -287,6 +299,7 @@
         container.appendChild(d);
       });
     }
+    
     function closeMyPinsModal() { document.getElementById('mypins-modal').classList.add('hidden'); }
     function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;") : ''; }
   </script>
