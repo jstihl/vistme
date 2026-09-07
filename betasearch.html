@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VistMe – Digital Korktavla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 0;
+        }
+        #searchResults {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-result-item:hover {
+            background: #1e293b;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans h-screen overflow-hidden">
+
+    <div id="map"></div>
+
+    <header class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center gap-4 pointer-events-none">
+        <div class="bg-gray-900/90 backdrop-blur border border-gray-800 px-4 py-2 rounded-2xl shadow-xl pointer-events-auto flex items-center gap-2">
+            <span class="text-amber-400 text-lg">📌</span>
+            <h1 class="font-bold text-sm tracking-wide text-gray-100">VistMe</h1>
+        </div>
+        
+        <div class="bg-gray-900/90 backdrop-blur border border-gray-800 rounded-2xl shadow-xl pointer-events-auto flex-1 max-w-xs relative">
+            <input type="text" id="searchInput" placeholder="Sök plats..." class="w-full bg-transparent text-white text-xs px-4 py-2 focus:outline-none placeholder-gray-500">
+            <div id="searchResults" class="absolute top-full left-0 right-0 bg-gray-900 border border-gray-800 rounded-xl mt-1 hidden"></div>
+        </div>
+    </header>
+
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <div class="bg-gray-900/90 backdrop-blur border border-gray-800 px-4 py-2 rounded-full shadow-2xl pointer-events-auto text-xs text-gray-300 text-center">
+            Klicka på kartan för att sätta upp en lapp! 📌
+        </div>
+    </div>
+
+    <div id="postModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl text-gray-100 relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            <h3 class="text-lg font-semibold mb-1 text-amber-400">Vad är ditt bästa tips här idag?</h3>
+            <p id="coordLabel" class="text-xs text-gray-400 mb-4">📍 Vald plats på kartan</p>
+            <textarea 
+                id="postText"
+                rows="4" 
+                class="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-400 resize-none"
+                placeholder="Skriv ditt tips, en varning eller något kul som händer..."
+            ></textarea>
+            <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                <span class="text-xs text-gray-500">Färskvara (Rensas automatiskt)</span>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">Avbryt</button>
+                    <button onclick="savePost()" class="px-4 py-2 rounded-xl text-sm bg-amber-500 text-gray-950 font-semibold hover:bg-amber-400 transition">Sätt upp lapp</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const map = L.map('map', { zoomControl: false }).setView([34.9228, 33.6233], 14);
+
+        const darkThemeTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        });
+
+        darkThemeTiles.on('tileload', function(e) {
+            e.tile.style.filter = 'brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3)';
+        });
+
+        darkThemeTiles.addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        let clickedLat = null;
+        let clickedLng = null;
+        const modal = document.getElementById('postModal');
+        const postText = document.getElementById('postText');
+        const coordLabel = document.getElementById('coordLabel');
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        // Sök efter plats
+        searchInput.addEventListener('input', async function(e) {
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+                const results = await response.json();
+                
+                searchResults.innerHTML = '';
+                if (results.length === 0) {
+                    searchResults.innerHTML = '<div class="p-3 text-xs text-gray-500">Ingen plats hittad</div>';
+                    searchResults.classList.remove('hidden');
+                    return;
+                }
+
+                results.forEach(result => {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item text-xs text-gray-300';
+                    div.innerText = result.display_name.substring(0, 60);
+                    div.onclick = () => {
+                        map.flyTo([result.lat, result.lon], 12);
+                        searchInput.value = '';
+                        searchResults.classList.add('hidden');
+                    };
+                    searchResults.appendChild(div);
+                });
+                searchResults.classList.remove('hidden');
+            } catch (error) {
+                console.error('Sökerror:', error);
+                searchResults.innerHTML = '<div class="p-3 text-xs text-red-500">Sökningen misslyckades</div>';
+                searchResults.classList.remove('hidden');
+            }
+        });
+
+        // Stäng sökresultat vid klick utanför
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#searchInput') && !e.target.closest('#searchResults')) {
+                searchResults.classList.add('hidden');
+            }
+        });
+
+        map.on('click', function(e) {
+            clickedLat = e.latlng.lat;
+            clickedLng = e.latlng.lng;
+            coordLabel.innerText = `📍 Position: ${clickedLat.toFixed(4)}, ${clickedLng.toFixed(4)}`;
+            postText.value = '';
+            modal.classList.remove('hidden');
+            postText.focus();
+        });
+
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+
+        function savePost() {
+            const text = postText.value.trim();
+            if(!text) {
+                alert('Skriv något på lappen först!');
+                return;
+            }
+
+            L.marker([clickedLat, clickedLng]).addTo(map)
+                .bindPopup(`<div style="color: #111; font-family: sans-serif;"><b>Post-it:</b><br>${text}</div>`)
+                .openPopup();
+
+            closeModal();
+        }
+    </script>
+</body>
+</html>
