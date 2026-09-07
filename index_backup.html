@@ -49,9 +49,16 @@
   <!-- Header / Top Bar -->
   <header class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-slate-900/95 to-slate-900/70 backdrop-blur-sm p-4 border-b border-slate-800/50 shadow-lg">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-4">
         <span class="text-2xl">📌</span>
         <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe</h1>
+        
+        <!-- Meny-knappar -->
+        <div class="hidden sm:flex items-center gap-2">
+          <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">🔹 Mina Post-its</button>
+          <button id="granska-btn" class="hidden bg-red-600/20 hover:bg-red-600/30 text-red-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border border-red-500/30">📋 Granska anmälningar</button>
+          <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">💬 Alla resenärer</button>
+        </div>
       </div>
       
       <div id="auth-section" class="flex items-center gap-2 sm:gap-4">
@@ -203,6 +210,12 @@
             
             console.log('✅ Inloggad:', currentUser.email);
             
+            // Check om SUPER USER
+            if (currentUser.id === '3d195441-4444-4af1-a22e-f107e5482824') {
+              document.getElementById('granska-btn').classList.remove('hidden');
+              console.log('🔐 SUPER USER aktiverad');
+            }
+            
             document.getElementById('login-btn').classList.add('hidden');
             document.getElementById('user-profile').classList.remove('hidden');
             
@@ -216,6 +229,7 @@
             currentUser = null;
             userAvatarUrl = '';
             userProfile = null;
+            document.getElementById('granska-btn').classList.add('hidden');
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-profile').classList.add('hidden');
             console.log('❌ Utloggad');
