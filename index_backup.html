@@ -244,8 +244,11 @@
             document.getElementById('header-avatar').src = userAvatarUrl;
           }
           await fetchUserProfile(session.user.id);
-          loadPins();
+        } else {
+          currentUser = null;
         }
+        // Ladda pins för alla (inloggade och ologgade)
+        loadPins();
       } catch (err) {
         console.error('Sessionsfel:', err);
       }
@@ -513,6 +516,10 @@
     }
 
     async function deletePin(locationName) {
+      if (!currentUser) {
+        alert('Du måste logga in för att radera tips!');
+        return;
+      }
       if (!confirm('Är du säker på att du vill radera ditt tip?')) return;
 
       try {
