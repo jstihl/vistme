@@ -48,7 +48,7 @@
 
   <!-- Header / Top Bar -->
   <header class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-slate-900/95 to-slate-900/70 backdrop-blur-sm p-4 border-b border-slate-800/50 shadow-lg">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <div class="flex justify-between items-center px-4 sm:px-6">
       <div class="flex items-center gap-2">
         <span class="text-2xl">📌</span>
         <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe</h1>
@@ -78,7 +78,7 @@
   </button>
 
   <!-- Bottom Sheet / Modal -->
-  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[85vh] overflow-y-auto">
+  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[92vh] overflow-y-auto">
     <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeBottomSheet()"></div>
     
     <!-- Visar recensioner för en plats -->
@@ -131,12 +131,6 @@
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-2">Smeknamn / Namn (Valfritt)</label>
           <input type="text" id="profile-nickname" placeholder="t.ex. NomadJasmin" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Kontakt-e-post (Helt valfritt)</label>
-          <input type="email" id="profile-email" placeholder="t.ex. du@example.com" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
         </div>
 
         <!-- Emoji Picker -->
@@ -297,7 +291,6 @@
             const { data: newProfile, error: insertError } = await supabaseClient.from('profiles').insert({
               id: userId,
               nickname: 'Anonym Resenär',
-              contact_email: '',
               pin_emoji: '📍',
               avatar_url: userAvatarUrl || '',
               updated_at: new Date().toISOString()
@@ -351,12 +344,10 @@
 
       if (userProfile) {
         document.getElementById('profile-nickname').value = userProfile.nickname || '';
-        document.getElementById('profile-email').value = userProfile.contact_email || '';
         const currentEmoji = userProfile.pin_emoji || '📍';
         selectEmoji(currentEmoji);
       } else {
         document.getElementById('profile-nickname').value = '';
-        document.getElementById('profile-email').value = '';
         selectEmoji('📍');
       }
 
@@ -381,14 +372,12 @@
       if (!currentUser) return;
 
       const nickname = document.getElementById('profile-nickname').value.trim();
-      const contactEmail = document.getElementById('profile-email').value.trim();
       const pinEmoji = document.getElementById('selected-pin-emoji').value;
 
       try {
         const { error } = await supabaseClient.from('profiles').upsert({
           id: currentUser.id,
           nickname: nickname || 'Anonym Resenär',
-          contact_email: contactEmail,
           pin_emoji: pinEmoji,
           avatar_url: userAvatarUrl || '',
           updated_at: new Date().toISOString()
@@ -402,7 +391,6 @@
           userProfile = { 
             id: currentUser.id, 
             nickname: nickname || 'Anonym Resenär', 
-            contact_email: contactEmail, 
             pin_emoji: pinEmoji,
             avatar_url: userAvatarUrl
           };
