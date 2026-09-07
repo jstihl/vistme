@@ -36,7 +36,7 @@
     }
 
     .leaflet-tile-pane {
-      filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8);
+      filter: brightness(0.85) contrast(1.1);
     }
 
     .sheet-transition { 
@@ -113,7 +113,6 @@
         <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer">Avbryt</button>
       </div>
     </div>
-      </div>
     </div>
   </div>
 
@@ -178,7 +177,8 @@
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    // Initiera kartan omedelbar
+    const initializeApp = () => {
       const southWest = L.latLng(-85, -180);
       const northEast = L.latLng(85, 180);
       const bounds = L.latLngBounds(southWest, northEast);
@@ -190,15 +190,19 @@
         bounceAtZoomLimits: false
       }).setView([20, 0], 2);
       
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 17,
-        maxNativeZoom: 15,
+      // Använd OpenStreetMap istället för ArcGIS
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
         minZoom: 2,
-        attribution: 'Tiles &copy; Esri'
+        attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
+      console.log('✅ Karta initialiserad');
       markersLayer = L.layerGroup().addTo(map);
-      setTimeout(() => { map.invalidateSize(); }, 100);
+      setTimeout(() => { 
+        map.invalidateSize(); 
+        console.log('✅ Map invalidateSize kördes');
+      }, 100);
 
       buildEmojiPicker();
 
@@ -233,7 +237,14 @@
         // Kolla om det redan finns en session
         checkUserSession();
       }
-    });
+    };
+
+    // Köra initializeApp omedelbar eller när DOM är redo
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+      initializeApp();
+    }
 
     async function checkUserSession() {
       try {
@@ -647,67 +658,71 @@
         saveBtn.innerText = originalText;
         saveBtn.disabled = false;
       }
-    // Simple drag-to-resize för bottom-sheet
+    // Enkel drag-to-resize för bottom-sheet
     let isDragging = false;
     let startY = 0;
-    const sheet = document.getElementById('bottom-sheet');
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const handle = sheet.querySelector('.bg-slate-800\\/50');
-      if (handle) {
-        handle.addEventListener('mousedown', (e) => {
-          isDragging = true;
-          startY = e.clientY;
-          sheet.classList.remove('sheet-transition');
-          e.preventDefault();
-        });
+    const sheetElement = document.getElementById('bottom-sheet');
+    const handleElement = sheetElement?.querySelector('.bg-slate-800\\/50');
 
-        handle.addEventListener('touchstart', (e) => {
-          isDragging = true;
-          startY = e.touches[0].clientY;
-          sheet.classList.remove('sheet-transition');
-        });
-      }
-    });
+    if (handleElement) {
+      handleElement.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startY = e.clientY;
+        sheetElement.classList.remove('sheet-transition');
+        e.preventDefault();
+      });
+
+      handleElement.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        startY = e.touches[0].clientY;
+        sheetElement.classList.remove('sheet-transition');
+      });
+    }
 
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
       const diff = startY - e.clientY;
-      const currentHeight = parseFloat(sheet.style.maxHeight) || 98;
+      const currentHeight = parseFloat(sheetElement?.style.maxHeight) || 98;
       const newHeight = Math.min(98, Math.max(30, currentHeight + (diff / window.innerHeight) * 100));
-      sheet.style.maxHeight = newHeight + 'vh';
+      if (sheetElement) sheetElement.style.maxHeight = newHeight + 'vh';
       startY = e.clientY;
     });
 
     document.addEventListener('touchmove', (e) => {
       if (!isDragging) return;
       const diff = startY - e.touches[0].clientY;
-      const currentHeight = parseFloat(sheet.style.maxHeight) || 98;
+      const currentHeight = parseFloat(sheetElement?.style.maxHeight) || 98;
       const newHeight = Math.min(98, Math.max(30, currentHeight + (diff / window.innerHeight) * 100));
-      sheet.style.maxHeight = newHeight + 'vh';
+      if (sheetElement) sheetElement.style.maxHeight = newHeight + 'vh';
       startY = e.touches[0].clientY;
     });
 
     document.addEventListener('mouseup', () => {
       if (!isDragging) return;
       isDragging = false;
-      sheet.classList.add('sheet-transition');
-      
-      const height = parseFloat(sheet.style.maxHeight) || 98;
-      if (height > 80) sheet.style.maxHeight = '98vh';
-      else if (height > 45) sheet.style.maxHeight = '65vh';
-      else closeBottomSheet();
+      if (sheetElement) {
+        sheetElement.classList.add('sheet-transition');
+        const height = parseFloat(sheetElement.style.maxHeight) || 98;
+        // Snappa till närmaste höjd
+        if (height > 80) sheetElement.style.maxHeight = '98vh';
+        else if (height > 45) sheetElement.style.maxHeight = '65vh';
+        else closeBottomSheet();
+      }
     });
 
     document.addEventListener('touchend', () => {
       if (!isDragging) return;
       isDragging = false;
-      sheet.classList.add('sheet-transition');
-      
-      const height = parseFloat(sheet.style.maxHeight) || 98;
-      if (height > 80) sheet.style.maxHeight = '98vh';
-      else if (height > 45) sheet.style.maxHeight = '65vh';
-      else closeBottomSheet();
+      if (sheetElement) {
+        sheetElement.classList.add('sheet-transition');
+        const height = parseFloat(sheetElement.style.maxHeight) || 98;
+        // Snappa till närmaste höjd
+        if (height > 80) sheetElement.style.maxHeight = '98vh';
+        else if (height > 45) sheetElement.style.maxHeight = '65vh';
+        else closeBottomSheet();
+      }
+      }
     });
   </script>
 </body>
