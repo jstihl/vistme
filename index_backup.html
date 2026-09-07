@@ -42,6 +42,20 @@
     .sheet-transition { 
       transition: transform 0.3s ease-in-out; 
     }
+
+    #bottom-sheet {
+      touch-action: none;
+    }
+
+    .sheet-handle {
+      cursor: grab;
+      user-select: none;
+      background-color: rgba(30, 41, 59, 0.5);
+    }
+
+    .sheet-handle:active {
+      cursor: grabbing;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-full w-full relative">
@@ -78,9 +92,9 @@
 
   <!-- Bottom Sheet / Modal -->
   <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl sheet-transition transform translate-y-full max-h-[98vh] overflow-y-auto">
-    <div class="max-w-7xl mx-auto">
-      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer mt-4" onclick="closeBottomSheet()"></div>
-      <div class="px-6 pb-6">
+    <div class="sheet-handle w-full py-3 cursor-grab active:cursor-grabbing" ontouchstart="startDrag(event)" ontouchmove="dragSheet(event)" ontouchend="endDrag(event)">
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto"></div>
+    </div>
     <!-- Visar recensioner för en plats -->
     <div id="sheet-content">
       <h2 id="sheet-title" class="text-2xl font-bold mb-1">Välj en plats</h2>
@@ -457,7 +471,9 @@
       document.getElementById('location-input').value = '';
       document.getElementById('review-input').value = '';
       updateCharCount();
-      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+      const sheet = document.getElementById('bottom-sheet');
+      sheet.style.maxHeight = '98vh';
+      sheet.classList.remove('translate-y-full');
     }
 
     function showLocationDetails(loc) {
@@ -518,7 +534,9 @@
         reviewsList.appendChild(reviewDetails);
       });
 
-      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+      const sheet = document.getElementById('bottom-sheet');
+      sheet.style.maxHeight = '98vh';
+      sheet.classList.remove('translate-y-full');
     }
 
     function editPin(locationName, text) {
@@ -557,7 +575,9 @@
     }
 
     function closeBottomSheet() {
-      document.getElementById('bottom-sheet').classList.add('translate-y-full');
+      const sheet = document.getElementById('bottom-sheet');
+      sheet.style.maxHeight = '98vh';
+      sheet.classList.add('translate-y-full');
     }
 
     function updateCharCount() {
@@ -633,6 +653,46 @@
         saveBtn.innerText = originalText;
         saveBtn.disabled = false;
       }
+    }
+
+    // Drag-to-expand funktionalitet för bottom-sheet
+    let dragStartY = 0;
+    let sheetMaxHeight = 98;
+
+    function startDrag(e) {
+      dragStartY = e.touches[0].clientY;
+      document.getElementById('bottom-sheet').classList.remove('sheet-transition');
+    }
+
+    function dragSheet(e) {
+      if (dragStartY === 0) return;
+      
+      const dragDiff = dragStartY - e.touches[0].clientY;
+      const windowHeight = window.innerHeight;
+      const sheetElement = document.getElementById('bottom-sheet');
+      
+      if (dragDiff > 0) {
+        // Dra uppåt - öka höjden
+        let newHeight = sheetMaxHeight + (dragDiff / windowHeight) * 100;
+        newHeight = Math.min(newHeight, 98);
+        sheetElement.style.maxHeight = newHeight + 'vh';
+      }
+    }
+
+    function endDrag(e) {
+      const sheetElement = document.getElementById('bottom-sheet');
+      sheetElement.classList.add('sheet-transition');
+      
+      // Snappa till närmaste höjdläge
+      const currentHeight = parseFloat(sheetElement.style.maxHeight || '98');
+      if (currentHeight > 80) {
+        sheetElement.style.maxHeight = '98vh';
+      } else if (currentHeight > 40) {
+        sheetElement.style.maxHeight = '60vh';
+      } else {
+        closeBottomSheet();
+      }
+      dragStartY = 0;
     }
   </script>
 </body>
