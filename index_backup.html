@@ -54,10 +54,20 @@
         <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe</h1>
         
         <!-- Meny-knappar -->
-        <div class="hidden sm:flex items-center gap-2">
+        <div id="menu-buttons" class="hidden sm:flex items-center gap-2">
           <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">🔹 Mina Post-its</button>
           <button id="granska-btn" class="hidden bg-red-600/20 hover:bg-red-600/30 text-red-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border border-red-500/30">📋 Granska anmälningar</button>
-          <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">💬 Alla resenärer</button>
+          <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer relative group">💬 Alla resenärer
+            <!-- Dropdown -->
+            <div id="travelers-dropdown" class="absolute hidden top-full left-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-lg min-w-48 z-50">
+              <div class="p-2 max-h-64 overflow-y-auto">
+                <div onclick="filterByUser(null)" class="px-3 py-2 hover:bg-slate-700 rounded cursor-pointer text-slate-300 text-xs">✅ Alla resenärer</div>
+                <div id="travelers-list" class="space-y-1">
+                  <!-- Lista över resenärer kommer här -->
+                </div>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
       
@@ -170,6 +180,7 @@
     let userProfile = null;
     let userAvatarUrl = '';
     let markersLayer = null;
+    let selectedUserFilter = null; // Filter för "Alla resenärer" dropdown
 
     const availableEmojis = ['📍', '📌', '✈️', '⭐', '🚀', '🏕️', '☕', '🌴'];
 
@@ -210,6 +221,9 @@
             
             console.log('✅ Inloggad:', currentUser.email);
             
+            // Visa meny-knappar
+            document.getElementById('menu-buttons').classList.remove('hidden');
+            
             // Check om SUPER USER
             if (currentUser.id === '3d195441-4444-4af1-a22e-f107e5482824') {
               document.getElementById('granska-btn').classList.remove('hidden');
@@ -229,7 +243,11 @@
             currentUser = null;
             userAvatarUrl = '';
             userProfile = null;
+            
+            // Göm meny-knappar vid logout
+            document.getElementById('menu-buttons').classList.add('hidden');
             document.getElementById('granska-btn').classList.add('hidden');
+            
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-profile').classList.add('hidden');
             console.log('❌ Utloggad');
@@ -436,8 +454,17 @@
           return;
         }
 
+        // Uppdatera resenärer-dropdown
+        updateTravelersDropdown(pins);
+
+        // Filtrera pins om en användare är vald
+        let filteredPins = pins;
+        if (selectedUserFilter) {
+          filteredPins = pins.filter(p => p.user_id === selectedUserFilter);
+        }
+
         const locationsMap = {};
-        pins.forEach(pin => {
+        filteredPins.forEach(pin => {
           const key = pin.location_name;
           if (!locationsMap[key]) {
             locationsMap[key] = {
@@ -455,10 +482,36 @@
           marker.on('click', () => showLocationDetails(loc));
         });
 
-        console.log('✅ ' + pins.length + ' tips laddade');
+        console.log('✅ ' + filteredPins.length + ' tips laddade' + (selectedUserFilter ? ' (filtrerat)' : ''));
       } catch (err) {
         console.error('❌ Tips-ladningsfel:', err);
       }
+    }
+
+    function updateTravelersDropdown(pins) {
+      // Samla alla unika user_id:n
+      const userIds = [...new Set(pins.map(p => p.user_id))];
+      const dropdown = document.getElementById('travelers-list');
+      dropdown.innerHTML = '';
+
+      userIds.forEach(userId => {
+        const userPins = pins.filter(p => p.user_id === userId);
+        const userName = userPins[0].user_id.substring(0, 8); // Kort ID
+        
+        const item = document.createElement('div');
+        item.className = 'px-3 py-2 hover:bg-slate-700 rounded cursor-pointer text-slate-300 text-xs';
+        item.textContent = `👤 ${userName} (${userPins.length})`;
+        item.onclick = () => filterByUser(userId);
+        dropdown.appendChild(item);
+      });
+    }
+
+    function filterByUser(userId) {
+      selectedUserFilter = userId;
+      loadPins();
+      
+      // Slå stäng dropdown
+      document.getElementById('travelers-dropdown').classList.add('hidden');
     }
 
     function openPinModal() {
@@ -648,6 +701,26 @@
         saveBtn.disabled = false;
       }
     }
+
+    // Toggle dropdown när man klickar på "Alla resenärer"
+    document.addEventListener('DOMContentLoaded', () => {
+      const allTravelersBtn = document.querySelector('button:has(+ [id="travelers-dropdown"])');
+      if (allTravelersBtn) {
+        allTravelersBtn.addEventListener('click', (e) => {
+          const dropdown = document.getElementById('travelers-dropdown');
+          dropdown.classList.toggle('hidden');
+        });
+      }
+    });
+
+    // Dölj dropdown när man klickar någonstans else på sidan
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('travelers-dropdown');
+      const allTravelersBtn = document.querySelector('button:has(+ [id="travelers-dropdown"])');
+      if (dropdown && !dropdown.contains(e.target) && !allTravelersBtn?.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
   </script>
 </body>
 </html>
