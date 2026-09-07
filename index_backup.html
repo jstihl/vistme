@@ -48,7 +48,7 @@
 
   <!-- Header / Top Bar -->
   <header class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-slate-900/95 to-slate-900/70 backdrop-blur-sm p-4 border-b border-slate-800/50 shadow-lg">
-    <div class="flex justify-between items-center px-4 sm:px-6">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-2">
         <span class="text-2xl">📌</span>
         <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe</h1>
@@ -60,7 +60,6 @@
         </button>
         
         <div id="user-profile" class="hidden flex items-center gap-2 sm:gap-3">
-          <span class="text-xs text-slate-400 hidden sm:inline">Visitör</span>
           <img id="header-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border border-indigo-500/50 object-cover cursor-pointer hover:border-indigo-400 transition shadow-md" onclick="openProfileModal()" title="Din profil">
           <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition px-1 sm:px-2 cursor-pointer">Logga ut</button>
         </div>
@@ -78,9 +77,10 @@
   </button>
 
   <!-- Bottom Sheet / Modal -->
-  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[92vh] overflow-y-auto">
-    <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeBottomSheet()"></div>
-    
+  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl sheet-transition transform translate-y-full max-h-[95vh] overflow-y-auto">
+    <div class="max-w-7xl mx-auto">
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer mt-4" onclick="closeBottomSheet()"></div>
+      <div class="px-6 pb-6">
     <!-- Visar recensioner för en plats -->
     <div id="sheet-content">
       <h2 id="sheet-title" class="text-2xl font-bold mb-1">Välj en plats</h2>
@@ -91,7 +91,7 @@
     <!-- Formulär: Lägg till / Redigera nål -->
     <div id="pin-form" class="hidden space-y-4">
       <h2 id="form-title" class="text-xl font-bold">Lägg till / Redigera din Tip</h2>
-      <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Larnaca)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+      <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Larnaca)" class="w-full bg-gradient-to-b from-slate-900/95 to-slate-900/70 border border-slate-700/50 rounded-lg p-4 text-white focus:outline-none focus:border-indigo-500 text-base font-medium shadow-md">
       
       <div class="relative">
         <textarea id="review-input" maxlength="1000" rows="5" oninput="updateCharCount()" placeholder="Skriv ditt tip (Max 1 000 tecken)..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500"></textarea>
@@ -108,6 +108,8 @@
       <div class="flex gap-3">
         <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer">Spara Tip</button>
         <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer">Avbryt</button>
+      </div>
+    </div>
       </div>
     </div>
   </div>
