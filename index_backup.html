@@ -54,12 +54,15 @@
     </div>
     
     <div id="auth-section">
-      <button id="login-btn" onclick="loginWithGoogle()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg flex items-center gap-2">
+      <button id="login-btn" onclick="loginWithGoogle()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg flex items-center gap-2 cursor-pointer">
         <span>Logga in med Google</span>
       </button>
+
+      <!-- Inloggad vy (Matchar din bild: Avatar, Profil-knapp, Logga ut) -->
       <div id="user-profile" class="hidden flex items-center gap-3">
-        <span id="pioneer-badge" class="bg-amber-500/20 text-amber-400 text-xs px-2.5 py-1 rounded-full border border-amber-500/30 font-semibold">Pioneer</span>
-        <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition">Logga ut</button>
+        <img id="header-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border border-indigo-500/40 object-cover">
+        <button onclick="openProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium transition border border-slate-700 cursor-pointer">Profil</button>
+        <button onclick="logout()" class="text-xs text-slate-400 hover:text-white transition cursor-pointer">Logga ut</button>
       </div>
     </div>
   </header>
@@ -68,10 +71,35 @@
   <div id="map"></div>
 
   <!-- Flytande Tum-knapp -->
-  <button id="action-btn" onclick="openPinModal()" class="fixed bottom-6 right-6 z-10 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold transition transform active:scale-95 border border-indigo-400/30">
+  <button id="action-btn" onclick="openPinModal()" class="fixed bottom-6 right-6 z-10 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold transition transform active:scale-95 border border-indigo-400/30 cursor-pointer">
     <span class="text-xl">📍</span>
     <span class="hidden sm:inline">Sätt/Redigera Nål</span>
   </button>
+
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl shadow-2xl flex flex-col p-6 space-y-5">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold text-indigo-300">Din Profil</h2>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer text-lg font-bold">✕</button>
+      </div>
+
+      <div class="flex justify-center">
+        <img id="profile-avatar-preview" src="" alt="Avatar" class="w-20 h-20 rounded-full border-2 border-indigo-500/40 object-cover shadow-md">
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs font-medium text-slate-300">Smeknamn / Användarnamn</label>
+        <input type="text" id="profile-nickname" placeholder="T.ex. Nomad_Sompong" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-indigo-500">
+        <p class="text-[11px] text-slate-500">Välj ett schysst smeknamn som visas vid dina nålar.</p>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button onclick="saveProfile()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold text-sm transition cursor-pointer">Spara Profil</button>
+        <button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl text-sm transition cursor-pointer">Stäng</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Bottom Sheet / Modal -->
   <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl p-6 shadow-2xl sheet-transition transform translate-y-full max-h-[85vh] overflow-y-auto">
@@ -102,8 +130,8 @@
       </div>
 
       <div class="flex gap-3">
-        <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition">Spara Nål</button>
-        <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition">Avbryt</button>
+        <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer">Spara Nål</button>
+        <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer">Avbryt</button>
       </div>
     </div>
   </div>
@@ -116,6 +144,7 @@
     let map = null;
     let currentUser = null;
     let markersLayer = null;
+    let userProfile = null;
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -152,13 +181,17 @@
     async function checkUserSession() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) handleUserSession(session.user);
+
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (session) handleUserSession(session.user);
+      });
     }
 
     async function loginWithGoogle() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
       const { error } = await supabaseClient.auth.signInWithOAuth({ 
         provider: 'google',
-        options: { redirectTo: 'https://jstihl.github.io/vistme/' }
+        options: { redirectTo: window.location.href }
       });
       if (error) alert('Inloggning misslyckades: ' + error.message);
     }
@@ -168,10 +201,71 @@
       window.location.reload();
     }
 
-    function handleUserSession(user) {
+    async function handleUserSession(user) {
       currentUser = user;
       document.getElementById('login-btn').classList.add('hidden');
       document.getElementById('user-profile').classList.remove('hidden');
+
+      // Sätt avatar om den finns i Google-metadata
+      if (user.user_metadata?.avatar_url) {
+        document.getElementById('header-avatar').src = user.user_metadata.avatar_url;
+        document.getElementById('profile-avatar-preview').src = user.user_metadata.avatar_url;
+      }
+
+      // Hämta eller skapa profil i databasen
+      await fetchOrCreateProfile(user);
+    }
+
+    async function fetchOrCreateProfile(user) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error && error.code === 'PGRST116') {
+          // Profilen finns inte, skapa en ny
+          const defaultNickname = user.user_metadata?.full_name || 'Nomad';
+          await supabaseClient.from('profiles').insert([
+            { id: user.id, nickname: defaultNickname, avatar_url: user.user_metadata?.avatar_url }
+          ]);
+          userProfile = { nickname: defaultNickname };
+        } else if (data) {
+          userProfile = data;
+          document.getElementById('profile-nickname').value = data.nickname || '';
+        }
+      } catch (err) {
+        console.error('Kunde inte hantera profil:', err);
+      }
+    }
+
+    function openProfileModal() {
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    async function saveProfile() {
+      if (!currentUser) return;
+      const nickname = document.getElementById('profile-nickname').value.trim();
+      if (!nickname) return alert('Smeknamnet kan inte vara tomt!');
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ nickname: nickname, updated_at: new Date() })
+        .eq('id', currentUser.id);
+
+      if (error) {
+        alert('Kunde inte spara profil: ' + error.message);
+      } else {
+        alert('Profilen har sparats!');
+        userProfile.nickname = nickname;
+        closeProfileModal();
+        loadPins();
+      }
     }
 
     function normalizeLocationName(name) {
@@ -188,6 +282,13 @@
       const { data: pins, error } = await supabaseClient.from('user_pins').select('*');
       if (error) return console.error('Kunde inte hämta nålar:', error);
 
+      // Hämta även profiler för att koppla smeknamn
+      const { data: profiles } = await supabaseClient.from('profiles').select('*');
+      const profilesMap = {};
+      if (profiles) {
+        profiles.forEach(p => { profilesMap[p.id] = p.nickname; });
+      }
+
       const locationsMap = {};
       pins.forEach(pin => {
         const key = pin.location_name;
@@ -199,6 +300,7 @@
             reviews: []
           };
         }
+        pin.author_nickname = profilesMap[pin.user_id] || 'Anonym Nomad';
         locationsMap[key].reviews.push(pin);
       });
 
@@ -238,19 +340,20 @@
         if (isOwner) {
           ownerActions = `
             <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
-              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}', ${review.has_couch})" class="text-indigo-400 hover:text-indigo-300 font-medium">Redigera</button>
+              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}', ${review.has_couch})" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">Redigera</button>
               <span class="text-slate-600">|</span>
-              <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium">Radera</button>
+              <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">Radera</button>
             </div>
           `;
         }
 
         reviewCard.innerHTML = `
           <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">${review.has_couch ? '🛋️ Erbjuder Soffa' : '📍 Besökare'}</span>
-            <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
+            <span class="text-xs font-bold text-indigo-300">👤 ${escapeHtml(review.author_nickname)}</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">${review.has_couch ? '🛋️ Soffa' : '📍 Besökare'}</span>
           </div>
           <p class="whitespace-pre-wrap leading-relaxed text-sm">${escapeHtml(review.review_text)}</p>
+          <div class="text-[10px] text-slate-500 mt-2 text-right">${new Date(review.updated_at).toLocaleDateString()}</div>
           ${ownerActions}
         `;
         reviewsList.appendChild(reviewCard);
