@@ -100,11 +100,6 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 text-sm text-slate-300">
-        <input type="checkbox" id="couch-check" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer">
-        <label for="couch-check" class="cursor-pointer">Erbjuder Soffa / Pitstop 🛋️</label>
-      </div>
-
       <div class="flex gap-3">
         <button onclick="savePin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition cursor-pointer">Spara Tip</button>
         <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer">Avbryt</button>
@@ -461,7 +456,6 @@
       document.getElementById('sheet-content').classList.add('hidden');
       document.getElementById('location-input').value = '';
       document.getElementById('review-input').value = '';
-      document.getElementById('couch-check').checked = false;
       updateCharCount();
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
@@ -471,47 +465,67 @@
       document.getElementById('sheet-content').classList.remove('hidden');
 
       document.getElementById('sheet-title').innerText = loc.display_name;
-      document.getElementById('sheet-subtitle').innerText = `${loc.reviews.length} resenär(er) har besökt denna plats`;
+      document.getElementById('sheet-subtitle').innerText = `${loc.reviews.length} resenär(er) har varit här`;
       
       const reviewsList = document.getElementById('reviews-list');
       reviewsList.innerHTML = '';
 
-      loc.reviews.forEach(review => {
+      // Hämta alla användarnamn och skapa en lista
+      loc.reviews.forEach((review, index) => {
         const isOwner = currentUser && review.user_id === currentUser.id;
-        const reviewCard = document.createElement('div');
-        reviewCard.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 text-slate-200 relative';
+        
+        // Användarnamn/header
+        const userHeader = document.createElement('div');
+        userHeader.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3 text-slate-200 cursor-pointer hover:bg-slate-800 transition';
+        userHeader.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-sm">👤 Resenär ${index + 1}</span>
+            <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
+          </div>
+        `;
+        
+        userHeader.onclick = () => {
+          // Toggle visa/dölj review för denna användare
+          const detailsDiv = document.getElementById(`review-details-${index}`);
+          if (detailsDiv) {
+            detailsDiv.classList.toggle('hidden');
+          }
+        };
+        
+        reviewsList.appendChild(userHeader);
+
+        // Review-detaljer (dölj initialt)
+        const reviewDetails = document.createElement('div');
+        reviewDetails.id = `review-details-${index}`;
+        reviewDetails.className = 'hidden bg-slate-900/40 border-l-2 border-indigo-500 ml-4 pl-4 py-3 text-slate-300 text-sm mb-3 rounded';
         
         let ownerActions = '';
         if (isOwner) {
           ownerActions = `
             <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
-              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}', ${review.has_couch})" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">✏️ Redigera</button>
+              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">✏️ Redigera</button>
               <span class="text-slate-600">|</span>
               <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">🗑️ Radera</button>
             </div>
           `;
         }
-
-        reviewCard.innerHTML = `
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">${review.has_couch ? '🛋️ Erbjuder Soffa' : '📍 Besökare'}</span>
-            <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
-          </div>
-          <p class="whitespace-pre-wrap leading-relaxed text-sm">${escapeHtml(review.review_text)}</p>
+        
+        reviewDetails.innerHTML = `
+          <p class="whitespace-pre-wrap leading-relaxed mb-2">${escapeHtml(review.review_text)}</p>
           ${ownerActions}
         `;
-        reviewsList.appendChild(reviewCard);
+        
+        reviewsList.appendChild(reviewDetails);
       });
 
       document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
 
-    function editPin(locationName, text, hasCouch) {
+    function editPin(locationName, text) {
       document.getElementById('sheet-content').classList.add('hidden');
       document.getElementById('pin-form').classList.remove('hidden');
       document.getElementById('location-input').value = locationName;
       document.getElementById('review-input').value = text;
-      document.getElementById('couch-check').checked = hasCouch;
       updateCharCount();
     }
 
@@ -564,7 +578,6 @@
 
       const rawLocation = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
-      const hasCouch = document.getElementById('couch-check').checked;
 
       if (!rawLocation || !review) return alert('Fyll i både plats och tip!');
       if (review.length > 1000) return alert('Tipet får max vara 1000 tecken!');
@@ -599,7 +612,6 @@
           location_name: normalizedLocation,
           display_name: displayName,
           review_text: review,
-          has_couch: hasCouch,
           lat: lat,
           lng: lng,
           updated_at: new Date().toISOString()
