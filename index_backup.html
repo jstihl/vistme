@@ -83,9 +83,7 @@
   <!-- Bottom Sheet / Modal -->
   <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl sheet-transition transform translate-y-full overflow-y-auto" style="max-height: 98vh;">
     <!-- Drag Handle -->
-    <div class="w-full bg-slate-800/50 py-3 flex justify-center sticky top-0 z-30 cursor-grab active:cursor-grabbing"
-         onmousedown="handleDragStart"
-         ontouchstart="handleDragStart">
+    <div class="w-full bg-slate-800/50 py-3 flex justify-center sticky top-0 z-30 cursor-grab active:cursor-grabbing">
       <div class="w-12 h-1.5 bg-slate-700 rounded-full"></div>
     </div>
 
@@ -649,59 +647,68 @@
         saveBtn.innerText = originalText;
         saveBtn.disabled = false;
       }
-    }
-
-    // Enkel drag-to-resize för bottom-sheet
+    // Simple drag-to-resize för bottom-sheet
     let isDragging = false;
     let startY = 0;
+    const sheet = document.getElementById('bottom-sheet');
 
-    function handleDragStart(e) {
-      isDragging = true;
-      startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-      document.getElementById('bottom-sheet').classList.remove('sheet-transition');
-      
-      if (e.type.includes('mouse')) {
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('mouseup', handleDragEnd);
-      } else {
-        document.addEventListener('touchmove', handleDragMove);
-        document.addEventListener('touchend', handleDragEnd);
+    document.addEventListener('DOMContentLoaded', () => {
+      const handle = sheet.querySelector('.bg-slate-800\\/50');
+      if (handle) {
+        handle.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          startY = e.clientY;
+          sheet.classList.remove('sheet-transition');
+          e.preventDefault();
+        });
+
+        handle.addEventListener('touchstart', (e) => {
+          isDragging = true;
+          startY = e.touches[0].clientY;
+          sheet.classList.remove('sheet-transition');
+        });
       }
-    }
+    });
 
-    function handleDragMove(e) {
+    document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
-      
-      const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-      const diff = startY - currentY;
-      const sheet = document.getElementById('bottom-sheet');
-      const currentHeight = Math.min(98, Math.max(30, 65 + (diff / window.innerHeight) * 100));
-      
-      sheet.style.maxHeight = currentHeight + 'vh';
-    }
+      const diff = startY - e.clientY;
+      const currentHeight = parseFloat(sheet.style.maxHeight) || 98;
+      const newHeight = Math.min(98, Math.max(30, currentHeight + (diff / window.innerHeight) * 100));
+      sheet.style.maxHeight = newHeight + 'vh';
+      startY = e.clientY;
+    });
 
-    function handleDragEnd(e) {
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const diff = startY - e.touches[0].clientY;
+      const currentHeight = parseFloat(sheet.style.maxHeight) || 98;
+      const newHeight = Math.min(98, Math.max(30, currentHeight + (diff / window.innerHeight) * 100));
+      sheet.style.maxHeight = newHeight + 'vh';
+      startY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('mouseup', () => {
       if (!isDragging) return;
       isDragging = false;
-      
-      const sheet = document.getElementById('bottom-sheet');
       sheet.classList.add('sheet-transition');
       
-      // Snapping
-      const height = Math.min(98, Math.max(30, parseFloat(sheet.style.maxHeight || 65)));
-      if (height > 80) {
-        sheet.style.maxHeight = '98vh';
-      } else if (height > 45) {
-        sheet.style.maxHeight = '65vh';
-      } else {
-        closeBottomSheet();
-      }
+      const height = parseFloat(sheet.style.maxHeight) || 98;
+      if (height > 80) sheet.style.maxHeight = '98vh';
+      else if (height > 45) sheet.style.maxHeight = '65vh';
+      else closeBottomSheet();
+    });
+
+    document.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      sheet.classList.add('sheet-transition');
       
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
-      document.removeEventListener('touchmove', handleDragMove);
-      document.removeEventListener('touchend', handleDragEnd);
-    }
+      const height = parseFloat(sheet.style.maxHeight) || 98;
+      if (height > 80) sheet.style.maxHeight = '98vh';
+      else if (height > 45) sheet.style.maxHeight = '65vh';
+      else closeBottomSheet();
+    });
   </script>
 </body>
 </html>
