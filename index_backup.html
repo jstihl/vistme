@@ -46,16 +46,6 @@
     #bottom-sheet {
       touch-action: none;
     }
-
-    .sheet-handle {
-      cursor: grab;
-      user-select: none;
-      background-color: rgba(30, 41, 59, 0.5);
-    }
-
-    .sheet-handle:active {
-      cursor: grabbing;
-    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-full w-full relative">
@@ -91,10 +81,16 @@
   </button>
 
   <!-- Bottom Sheet / Modal -->
-  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl sheet-transition transform translate-y-full max-h-[98vh] overflow-y-auto">
-    <div class="sheet-handle w-full py-3 cursor-grab active:cursor-grabbing" ontouchstart="startDrag(event)" ontouchmove="dragSheet(event)" ontouchend="endDrag(event)">
-      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto"></div>
+  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl sheet-transition transform translate-y-full overflow-y-auto" style="max-height: 98vh;">
+    <!-- Drag Handle -->
+    <div class="w-full bg-slate-800/50 py-3 flex justify-center sticky top-0 z-30 cursor-grab active:cursor-grabbing"
+         onmousedown="handleDragStart"
+         ontouchstart="handleDragStart">
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full"></div>
     </div>
+
+    <!-- Content Wrapper med max-width -->
+    <div class="max-w-7xl mx-auto px-6 pb-6 w-full">
     <!-- Visar recensioner för en plats -->
     <div id="sheet-content">
       <h2 id="sheet-title" class="text-2xl font-bold mb-1">Välj en plats</h2>
@@ -655,44 +651,56 @@
       }
     }
 
-    // Drag-to-expand funktionalitet för bottom-sheet
-    let dragStartY = 0;
-    let sheetMaxHeight = 98;
+    // Enkel drag-to-resize för bottom-sheet
+    let isDragging = false;
+    let startY = 0;
 
-    function startDrag(e) {
-      dragStartY = e.touches[0].clientY;
+    function handleDragStart(e) {
+      isDragging = true;
+      startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
       document.getElementById('bottom-sheet').classList.remove('sheet-transition');
-    }
-
-    function dragSheet(e) {
-      if (dragStartY === 0) return;
       
-      const dragDiff = dragStartY - e.touches[0].clientY;
-      const windowHeight = window.innerHeight;
-      const sheetElement = document.getElementById('bottom-sheet');
-      
-      if (dragDiff > 0) {
-        // Dra uppåt - öka höjden
-        let newHeight = sheetMaxHeight + (dragDiff / windowHeight) * 100;
-        newHeight = Math.min(newHeight, 98);
-        sheetElement.style.maxHeight = newHeight + 'vh';
+      if (e.type.includes('mouse')) {
+        document.addEventListener('mousemove', handleDragMove);
+        document.addEventListener('mouseup', handleDragEnd);
+      } else {
+        document.addEventListener('touchmove', handleDragMove);
+        document.addEventListener('touchend', handleDragEnd);
       }
     }
 
-    function endDrag(e) {
-      const sheetElement = document.getElementById('bottom-sheet');
-      sheetElement.classList.add('sheet-transition');
+    function handleDragMove(e) {
+      if (!isDragging) return;
       
-      // Snappa till närmaste höjdläge
-      const currentHeight = parseFloat(sheetElement.style.maxHeight || '98');
-      if (currentHeight > 80) {
-        sheetElement.style.maxHeight = '98vh';
-      } else if (currentHeight > 40) {
-        sheetElement.style.maxHeight = '60vh';
+      const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      const diff = startY - currentY;
+      const sheet = document.getElementById('bottom-sheet');
+      const currentHeight = Math.min(98, Math.max(30, 65 + (diff / window.innerHeight) * 100));
+      
+      sheet.style.maxHeight = currentHeight + 'vh';
+    }
+
+    function handleDragEnd(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      
+      const sheet = document.getElementById('bottom-sheet');
+      sheet.classList.add('sheet-transition');
+      
+      // Snapping
+      const height = Math.min(98, Math.max(30, parseFloat(sheet.style.maxHeight || 65)));
+      if (height > 80) {
+        sheet.style.maxHeight = '98vh';
+      } else if (height > 45) {
+        sheet.style.maxHeight = '65vh';
       } else {
         closeBottomSheet();
       }
-      dragStartY = 0;
+      
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchmove', handleDragMove);
+      document.removeEventListener('touchend', handleDragEnd);
     }
   </script>
 </body>
