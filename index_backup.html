@@ -536,7 +536,7 @@
       document.getElementById('travelers-dropdown').classList.add('hidden');
     }
 
-    // Mina Post-its Modal med strikt en rad och "Läs mer" i slutet
+    // Mina Post-its Modal med en rad + Läs mer och Redigera-knapp
     async function openMyPinsModal() {
       if (!currentUser) return alert('Du måste logga in först!');
       document.getElementById('mypins-modal').classList.remove('hidden');
@@ -562,8 +562,9 @@
             <span id="pin-text-${index}" class="overflow-hidden text-ellipsis">${fullText}</span>
             <span id="btn-read-${index}" onclick="toggleReadMore(${index}, \`${encodeURIComponent(fullText)}\`)" class="text-indigo-400 hover:text-indigo-300 font-semibold ml-2 cursor-pointer shrink-0">Läs mer</span>
           </div>
-          <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
-            <button onclick="deletePin('${pin.location_name}'); closeMyPinsModal();" class="text-rose-400 hover:text-rose-300 cursor-pointer">Radera</button>
+          <div class="flex justify-end gap-3 pt-2 border-t border-slate-700">
+            <button onclick="editPinFromMyPins('${escapeHtml(pin.display_name)}', \`${encodeURIComponent(pin.review_text)}\`)" class="text-indigo-400 hover:text-indigo-300 cursor-pointer font-medium">✏️ Redigera</button>
+            <button onclick="deletePin('${pin.location_name}'); closeMyPinsModal();" class="text-rose-400 hover:text-rose-300 cursor-pointer font-medium">🗑️ Radera</button>
           </div>
         `;
         container.appendChild(div);
@@ -592,6 +593,17 @@
         btn.classList.remove('block', 'mt-1');
         btn.innerText = 'Läs mer';
       }
+    }
+
+    // Öppna redigeringsformuläret direkt från "Mina Post-its"
+    function editPinFromMyPins(displayName, encodedText) {
+      closeMyPinsModal();
+      document.getElementById('pin-form').classList.remove('hidden');
+      document.getElementById('sheet-content').classList.add('hidden');
+      document.getElementById('location-input').value = displayName;
+      document.getElementById('review-input').value = decodeURIComponent(encodedText);
+      updateCharCount();
+      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
     }
 
     function closeMyPinsModal() {
@@ -761,7 +773,15 @@
           ? geoData[0].display_name.split(',')[0] 
           : rawLocation;
 
-        const { error } = await supabaseClient.from('user_pins').upsert({
+        const { error } = await supabaseClient.onsert ? await supabaseClient.from('user_pins').upsert({
+          user_id: currentUser.id,
+          location_name: normalizedLocation,
+          display_name: displayName,
+          review_text: review,
+          lat: lat,
+          lng: lng,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,location_name' }) : await supabaseClient.from('user_pins').upsert({
           user_id: currentUser.id,
           location_name: normalizedLocation,
           display_name: displayName,
