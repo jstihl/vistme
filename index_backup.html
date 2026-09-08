@@ -307,12 +307,6 @@
             currentUser = session.user;
             userAvatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '';
             
-            document.getElementById('menu-buttons').classList.remove('hidden');
-            
-            if (currentUser.id === '3d195441-4444-4af1-a22e-f107e5482824') {
-              document.getElementById('granska-btn').classList.remove('hidden');
-            }
-            
             document.getElementById('login-btn').classList.add('hidden');
             document.getElementById('user-profile').classList.remove('hidden');
             
@@ -326,9 +320,6 @@
             currentUser = null;
             userAvatarUrl = '';
             userProfile = null;
-            
-            document.getElementById('menu-buttons').classList.add('hidden');
-            document.getElementById('granska-btn').classList.add('hidden');
             
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-profile').classList.add('hidden');
@@ -834,7 +825,7 @@
           : rawLocation;
 
         const { error } = await supabaseClient.from('user_pins').upsert({
-          user_id:currentUser.id,
+          user_id: currentUser.id,
           location_name: normalizedLocation,
           display_name: displayName,
           review_text: review,
