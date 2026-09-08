@@ -46,7 +46,6 @@
       border: none !important;
     }
 
-    /* Animation för att lappen ska dyka in med en skön wobble/studs */
     @keyframes wobbleZoom {
       0% {
         opacity: 0;
@@ -65,9 +64,8 @@
       }
     }
 
-    /* Post-it styling med animationen pålagd */
     .postit-note {
-      background: #ec4899; /* Rosa post-it */
+      background: #ec4899;
       color: #1e1b4b;
       box-shadow: 4px 10px 25px rgba(0,0,0,0.5);
       font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
@@ -89,7 +87,7 @@
           <button onclick="openMyPinsModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">🔹 Mina Post-its</button>
           <button id="granska-btn" class="hidden bg-red-600/20 hover:bg-red-600/30 text-red-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border border-red-500/30" onclick="openAdminModal()">📋 Granska anmälningar</button>
           
-          <!-- Dropdown för resenärer (Alltid synlig) -->
+          <!-- Dropdown för resenärer -->
           <div class="relative">
             <button id="travelers-menu-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">💬 Alla resenärer</button>
             <div id="travelers-dropdown" class="absolute hidden top-full left-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-lg min-w-48 z-50">
@@ -156,18 +154,15 @@
     </div>
   </div>
 
-  <!-- Witty Post-it Popup (Med animering) -->
+  <!-- Inloggnings-varning Modal -->
   <div id="auth-required-modal" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="postit-note w-full max-w-xs p-6 rounded-sm relative flex flex-col items-center text-center">
-      <!-- "Tape" i toppen -->
       <div class="absolute -top-3 w-16 h-6 bg-yellow-200/40 backdrop-blur-sm border border-white/20 rotate-1"></div>
-      
       <span class="text-3xl mb-2">🛑</span>
       <h3 class="font-bold text-lg mb-2 text-pink-950">Hoppsan!</h3>
       <p class="text-sm font-medium leading-relaxed mb-6 text-pink-900">
         Kartor minns allt, men vi behöver veta vem du är först! Logga in innan du sätter upp dina hemliga tips. 😉📌
       </p>
-
       <div class="flex flex-col gap-2 w-full">
         <button onclick="loginWithGoogle()" class="w-full bg-slate-950 text-white py-2.5 rounded-lg font-bold text-xs hover:bg-slate-800 transition cursor-pointer shadow">
           Logga in med Google
@@ -192,12 +187,10 @@
       </div>
 
       <div class="overflow-y-auto flex-1 pr-1 space-y-4">
-        <!-- Visar recensioner för en plats -->
         <div id="sheet-content" class="space-y-3">
           <div id="reviews-list" class="space-y-3"></div>
         </div>
 
-        <!-- Formulär: Lägg till / Redigera nål -->
         <div id="pin-form" class="hidden space-y-4">
           <h2 id="form-title" class="text-lg font-bold text-amber-400">Vad är ditt bästa tips här idag?</h2>
           <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Larnaca)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-400 text-sm font-medium shadow-md">
@@ -236,18 +229,18 @@
     </div>
   </div>
 
-  <!-- Admin / Granska Modal -->
+  <!-- Admin / Granska anmälningar Modal -->
   <div id="admin-modal" class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden p-6 max-h-[85vh]">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
         <h2 class="text-lg font-bold text-red-400">📋 Granska anmälningar</h2>
         <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white text-2xl cursor-pointer">✕</button>
       </div>
       <div id="admin-list-container" class="overflow-y-auto space-y-3 flex-1 pr-1 text-sm text-slate-300">
-        Inga aktiva anmälningar just nu.
+        Laddar anmälda inlägg...
       </div>
-      <div class="mt-4 pt-3 border-t border-slate-700 text-right">
-        <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm cursor-pointer">Stäng</button>
+      <div class="mt-4 pt-3 border-t border-slate-800 text-right">
+        <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs sm:text-sm cursor-pointer">Stäng</button>
       </div>
     </div>
   </div>
@@ -348,6 +341,7 @@
             currentUser = session.user;
             userAvatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '';
             
+            // Kolla om det är superuser (ditt ID)
             if (currentUser.id === '3d195441-4444-4af1-a22e-f107e5482824') {
               document.getElementById('granska-btn').classList.remove('hidden');
             }
@@ -368,6 +362,7 @@
             
             document.getElementById('login-btn').classList.remove('hidden');
             document.getElementById('user-profile').classList.add('hidden');
+            document.getElementById('granska-btn').classList.add('hidden');
           }
         });
 
@@ -383,6 +378,9 @@
           userAvatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '';
           document.getElementById('login-btn').classList.add('hidden');
           document.getElementById('user-profile').classList.remove('hidden');
+          if (currentUser.id === '3d195441-4444-4af1-a22e-f107e5482824') {
+            document.getElementById('granska-btn').classList.remove('hidden');
+          }
           if (userAvatarUrl) {
             document.getElementById('header-avatar').src = userAvatarUrl;
           }
@@ -476,20 +474,16 @@
         openAuthModal();
         return;
       }
-
       if (userAvatarUrl) {
         document.getElementById('profile-modal-avatar').src = userAvatarUrl;
       }
-
       if (userProfile) {
         document.getElementById('profile-nickname').value = userProfile.nickname || '';
-        const currentEmoji = userProfile.pin_emoji || '📍';
-        selectEmoji(currentEmoji);
+        selectEmoji(userProfile.pin_emoji || '📍');
       } else {
         document.getElementById('profile-nickname').value = '';
         selectEmoji('📍');
       }
-
       document.getElementById('nickname-error').classList.add('hidden');
       document.getElementById('profile-modal').classList.remove('hidden');
     }
@@ -527,73 +521,31 @@
     function generateRandomNickname() {
       const adjectives = ["Cosmic", "Neon", "Cyber", "Wild", "Swift", "Astro", "Solar", "Turbo", "Nomad", "Pixel", "Epic", "Urban"];
       const nouns = ["Rider", "Driver", "Walker", "Scout", "Pilot", "Rover", "Drifter", "Pioneer", "Viking", "Hiker", "Runner", "Ghost"];
-      
       const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
       const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
       const randomNumber = Math.floor(Math.random() * 900) + 100;
-      
-      const generated = `${randomAdjective}${randomNoun}${randomNumber}`;
-      document.getElementById('profile-nickname').value = generated;
+      document.getElementById('profile-nickname').value = `${randomAdjective}${randomNoun}${randomNumber}`;
       document.getElementById('nickname-error').classList.add('hidden');
     }
 
     function validateFullNickname(nickname) {
       const blockedNames = ["jasmin", "sompong", "erik", "anna", "johan", "maja", "per", "karin", "robert"];
-      
-      const profanityList = [
-        "jävel", "helvete", "fan", "hora", "skit", "kuk",
-        "ass", "damn", "hell", "fuck", "crap", "bitch"
-      ];
-      
-      const biblicalNames = [
-        "gud", "messias", "jesus", "kristus", "moses", "david",
-        "adam", "eva", "satan", "demon", "ängelkraft", "paradis",
-        "helvetet", "hades", "allah", "buddha", "maria", "josef"
-      ];
+      const profanityList = ["jävel", "helvete", "fan", "hora", "skit", "kuk", "ass", "damn", "hell", "fuck", "crap", "bitch"];
+      const biblicalNames = ["gud", "messias", "jesus", "kristus", "moses", "david", "adam", "eva", "satan", "demon", "paradis", "hades", "allah", "buddha", "maria", "josef"];
       
       const lowerNick = nickname.toLowerCase();
+      if (nickname.length < 4 || nickname.length > 20) return { valid: false, error: "Måste vara 4-20 tecken" };
+      if (!/^[a-zA-Z0-9äöåÄÖÅ]+$/.test(nickname)) return { valid: false, error: "Bara bokstäver och siffror tillåtet" };
+      if (!/[a-zA-ZäöåÄÖÅ]/.test(nickname) || !/[0-9]/.test(nickname)) return { valid: false, error: "Måste innehålla både bokstäver och siffror" };
       
-      const hasLetters = /[a-zA-ZäöåÄÖÅ]/.test(nickname);
-      const hasNumbers = /[0-9]/.test(nickname);
-      const validLength = nickname.length >= 4 && nickname.length <= 20;
-      const validChars = /^[a-zA-Z0-9äöåÄÖÅ]+$/.test(nickname);
-      
-      if (!validLength) {
-        return { valid: false, error: "Måste vara 4-20 tecken" };
-      }
-      
-      if (!validChars) {
-        return { valid: false, error: "Bara bokstäver och siffror tillåtet" };
-      }
-      
-      if (!hasLetters || !hasNumbers) {
-        return { valid: false, error: "Måste innehålla både bokstäver och siffror" };
-      }
-      
-      for (let name of blockedNames) {
-        if (lowerNick.includes(name)) {
-          return { valid: false, error: "Verkar innehålla ett verkligt namn" };
-        }
-      }
-      
-      for (let word of profanityList) {
-        if (lowerNick.includes(word)) {
-          return { valid: false, error: "Smeknamnet innehåller olämpliga ord" };
-        }
-      }
-      
-      for (let word of biblicalNames) {
-        if (lowerNick.includes(word)) {
-          return { valid: false, error: "Smeknamnet innehåller religiösa termer" };
-        }
-      }
-      
-      return { valid: true, message: "✅ Godkänt!" };
+      for (let name of blockedNames) { if (lowerNick.includes(name)) return { valid: false, error: "Verkar innehålla ett verkligt namn" }; }
+      for (let word of profanityList) { if (lowerNick.includes(word)) return { valid: false, error: "Innehåller olämpliga ord" }; }
+      for (let word of biblicalNames) { if (lowerNick.includes(word)) return { valid: false, error: "Innehåller religiösa termer" }; }
+      return { valid: true };
     }
 
     async function saveProfile() {
       if (!currentUser) return;
-
       const nickname = document.getElementById('profile-nickname').value.trim();
       const pinEmoji = document.getElementById('selected-pin-emoji').value;
       const errorEl = document.getElementById('nickname-error');
@@ -603,9 +555,8 @@
         errorEl.innerText = validation.error;
         errorEl.classList.remove('hidden');
         return;
-      } else {
-        errorEl.classList.add('hidden');
       }
+      errorEl.classList.add('hidden');
 
       try {
         const { error } = await supabaseClient.from('profiles').upsert({
@@ -619,12 +570,7 @@
         if (error) {
           alert('Kunde inte spara profil: ' + error.message);
         } else {
-          userProfile = { 
-            id: currentUser.id, 
-            nickname: nickname, 
-            pin_emoji: pinEmoji,
-            avatar_url: userAvatarUrl
-          };
+          userProfile = { id: currentUser.id, nickname, pin_emoji: pinEmoji, avatar_url: userAvatarUrl };
           alert('Profilen har sparats! 🎉');
           loadPins();
           closeProfileModal();
@@ -635,15 +581,11 @@
     }
 
     function normalizeLocationName(name) {
-      return name
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]/g, "");
+      return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
     }
 
     async function loadPins() {
       if (!supabaseClient) return;
-      
       try {
         markersLayer.clearLayers();
         const { data: pins, error } = await supabaseClient.from('user_pins').select('*');
@@ -670,12 +612,7 @@
         filteredPins.forEach(pin => {
           const key = pin.location_name;
           if (!locationsMap[key]) {
-            locationsMap[key] = {
-              display_name: pin.display_name,
-              lat: pin.lat,
-              lng: pin.lng,
-              reviews: []
-            };
+            locationsMap[key] = { display_name: pin.display_name, lat: pin.lat, lng: pin.lng, reviews: [] };
           }
           pin.author_nickname = profilesMap[pin.user_id] || 'Anonym Resenär';
           pin.author_emoji = emojisMap[pin.user_id] || '📍';
@@ -684,14 +621,12 @@
 
         Object.values(locationsMap).forEach(loc => {
           const primaryEmoji = loc.reviews[0]?.author_emoji || '📍';
-          
           const customIcon = L.divIcon({
             className: 'custom-map-pin',
             html: `<div style="font-size: 26px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transform: translate(-12px, -24px);">${primaryEmoji}</div>`,
             iconSize: [30, 30],
             iconAnchor: [15, 30]
           });
-
           const marker = L.marker([loc.lat, loc.lng], { icon: customIcon }).addTo(markersLayer);
           marker.on('click', () => showLocationDetails(loc));
         });
@@ -704,11 +639,9 @@
       const userIds = [...new Set(pins.map(p => p.user_id))];
       const dropdown = document.getElementById('travelers-list');
       dropdown.innerHTML = '';
-
       userIds.forEach(userId => {
         const userPins = pins.filter(p => p.user_id === userId);
         const name = profilesMap[userId] || userId.substring(0, 8);
-        
         const item = document.createElement('div');
         item.className = 'px-3 py-2 hover:bg-slate-700 rounded cursor-pointer text-slate-300 text-xs';
         item.textContent = `👤 ${name} (${userPins.length})`;
@@ -724,10 +657,7 @@
     }
 
     async function openMyPinsModal() {
-      if (!currentUser) {
-        openAuthModal();
-        return;
-      }
+      if (!currentUser) { openAuthModal(); return; }
       document.getElementById('mypins-modal').classList.remove('hidden');
       const container = document.getElementById('mypins-list-container');
       container.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">Laddar dina inlägg...</p>';
@@ -742,9 +672,7 @@
       data.forEach((pin, index) => {
         const div = document.createElement('div');
         div.className = 'bg-slate-800 p-3 rounded-xl text-xs space-y-2';
-        
         const fullText = escapeHtml(pin.review_text);
-
         div.innerHTML = `
           <div class="font-bold text-amber-400">${escapeHtml(pin.display_name)}</div>
           <div id="text-container-${index}" class="text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis flex justify-between items-center">
@@ -764,7 +692,6 @@
       const container = document.getElementById(`text-container-${index}`);
       const textSpan = document.getElementById(`pin-text-${index}`);
       const btn = document.getElementById(`btn-read-${index}`);
-      
       const fullText = decodeURIComponent(encodedFull);
 
       if (btn.innerText === 'Läs mer') {
@@ -772,14 +699,12 @@
         container.classList.add('block');
         textSpan.classList.remove('overflow-hidden', 'text-ellipsis');
         textSpan.innerText = fullText;
-        btn.classList.add('block', 'mt-1');
         btn.innerText = 'Visa mindre';
       } else {
         container.classList.add('whitespace-nowrap', 'overflow-hidden', 'text-ellipsis', 'flex', 'justify-between', 'items-center');
         container.classList.remove('block');
         textSpan.classList.add('overflow-hidden', 'text-ellipsis');
         textSpan.innerText = fullText;
-        btn.classList.remove('block', 'mt-1');
         btn.innerText = 'Läs mer';
       }
     }
@@ -796,23 +721,100 @@
       document.getElementById('location-modal').classList.remove('hidden');
     }
 
-    function closeMyPinsModal() {
-      document.getElementById('mypins-modal').classList.add('hidden');
-    }
+    function closeMyPinsModal() { document.getElementById('mypins-modal').classList.add('hidden'); }
 
-    function openAdminModal() {
+    // Admin / Granska anmälningar
+    async function openAdminModal() {
+      if (!currentUser || currentUser.id !== '3d195441-4444-4af1-a22e-f107e5482824') {
+        alert('Endast administratören har tillgång hit.');
+        return;
+      }
       document.getElementById('admin-modal').classList.remove('hidden');
+      const container = document.getElementById('admin-list-container');
+      container.innerHTML = '<p class="text-slate-400 text-center py-4">Laddar rapporterade inlägg...</p>';
+
+      try {
+        const { data, error } = await supabaseClient.from('reported_pins').select('*');
+        if (error || !data || data.length === 0) {
+          container.innerHTML = '<p class="text-slate-400 text-center py-4">Inga aktiva anmälningar just nu. 🎉</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        data.forEach(report => {
+          const div = document.createElement('div');
+          div.className = 'bg-slate-800 border border-slate-700 p-3 rounded-xl space-y-2';
+          div.innerHTML = `
+            <div class="flex justify-between text-xs text-rose-400 font-bold">
+              <span>Plats: ${escapeHtml(report.display_name || report.location_name)}</span>
+              <span>Anmäld: ${new Date(report.created_at || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <p class="text-slate-300 text-xs bg-slate-900/50 p-2 rounded">${escapeHtml(report.review_text)}</p>
+            <div class="flex justify-end gap-2 pt-1">
+              <button onclick="adminDeleteReportedPin('${report.location_name}', '${report.user_id}', ${report.id})" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer">Radera inlägg</button>
+              <button onclick="adminDismissReport(${report.id})" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded text-xs cursor-pointer">Ignorera anmälan</button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        container.innerHTML = '<p class="text-rose-400 text-center py-4">Kunde inte hämta anmälningar. Kontrollera tabellen i Supabase.</p>';
+      }
     }
 
-    function closeAdminModal() {
-      document.getElementById('admin-modal').classList.add('hidden');
+    function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); }
+
+    // Skicka in anmälan (Rapportera)
+    async function reportPin(locationName, displayName, reviewText, pinUserId) {
+      if (!currentUser) { openAuthModal(); return; }
+      if (!confirm('Vill du anmäla det här inlägget som olämpligt till administratören?')) return;
+
+      try {
+        const { error } = await supabaseClient.from('reported_pins').insert({
+          location_name: locationName,
+          display_name: displayName,
+          review_text: reviewText,
+          user_id: pinUserId,
+          reported_by: currentUser.id,
+          created_at: new Date().toISOString()
+        });
+
+        if (error) {
+          alert('Kunde inte skicka anmälan: ' + error.message);
+        } else {
+          alert('Inlägget har anmälts till administratören. Tack för att du hjälper till!');
+        }
+      } catch (err) {
+        alert('Ett nätverksfel uppstod.');
+      }
+    }
+
+    // Admin tar bort inlägg direkt
+    async function adminDeleteReportedPin(locationName, pinUserId, reportId) {
+      if (!confirm('Är du säker på att du vill radera detta anmälda inlägg från kartan?')) return;
+      try {
+        await supabaseClient.from('user_pins').delete().eq('user_id', pinUserId).eq('location_name', locationName);
+        await supabaseClient.from('reported_pins').delete().eq('id', reportId);
+        alert('Inlägget har raderats.');
+        openAdminModal();
+        loadPins();
+      } catch (err) {
+        alert('Kunde inte utföra åtgärden.');
+      }
+    }
+
+    // Admin ignorerar/tar bort anmälan utan att radera inlägg
+    async function adminDismissReport(reportId) {
+      try {
+        await supabaseClient.from('reported_pins').delete().eq('id', reportId);
+        openAdminModal();
+      } catch (err) {
+        alert('Kunde inte rensa anmälan.');
+      }
     }
 
     function openPinModal() {
-      if (!currentUser && supabaseClient) {
-        openAuthModal();
-        return;
-      }
+      if (!currentUser && supabaseClient) { openAuthModal(); return; }
       document.getElementById('pin-form').classList.remove('hidden');
       document.getElementById('sheet-content').classList.add('hidden');
       document.getElementById('sheet-title').innerText = "Nytt tips";
@@ -826,25 +828,29 @@
     function showLocationDetails(loc) {
       document.getElementById('pin-form').classList.add('hidden');
       document.getElementById('sheet-content').classList.remove('hidden');
-
       document.getElementById('sheet-title').innerText = loc.display_name;
       document.getElementById('sheet-subtitle').innerText = `${loc.reviews.length} resenär(er) har varit här`;
       
       const reviewsList = document.getElementById('reviews-list');
       reviewsList.innerHTML = '';
 
-      loc.reviews.forEach((review, index) => {
+      loc.reviews.forEach((review) => {
         const isOwner = currentUser && review.user_id === currentUser.id;
-        
         const card = document.createElement('div');
         card.className = 'bg-slate-800/80 border border-slate-700 rounded-xl p-3 text-slate-200 space-y-2';
         
-        let ownerActions = '';
+        let actions = '';
         if (isOwner) {
-          ownerActions = `
+          actions = `
             <div class="flex gap-3 pt-2 border-t border-slate-700 text-xs">
               <button onclick="editPin('${escapeHtml(loc.display_name)}', \`${encodeURIComponent(review.review_text)}\`)" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">✏️ Redigera</button>
               <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">🗑️ Radera</button>
+            </div>
+          `;
+        } else {
+          actions = `
+            <div class="flex justify-end pt-2 border-t border-slate-700 text-xs">
+              <button onclick="reportPin('${review.location_name}', '${escapeHtml(loc.display_name)}', \`${encodeURIComponent(review.review_text)}\`, '${review.user_id}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">⚠️ Rapportera inlägg</button>
             </div>
           `;
         }
@@ -855,9 +861,8 @@
             <span>${new Date(review.updated_at).toLocaleDateString()}</span>
           </div>
           <p class="whitespace-pre-wrap leading-relaxed text-sm text-slate-300 pt-1">${escapeHtml(review.review_text)}</p>
-          ${ownerActions}
+          ${actions}
         `;
-        
         reviewsList.appendChild(card);
       });
 
@@ -875,19 +880,11 @@
     }
 
     async function deletePin(locationName) {
-      if (!currentUser) {
-        openAuthModal();
-        return;
-      }
+      if (!currentUser) { openAuthModal(); return; }
       if (!confirm('Är du säker på att du vill radera ditt tip?')) return;
 
       try {
-        const { error } = await supabaseClient
-          .from('user_pins')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .eq('location_name', locationName);
-
+        const { error } = await supabaseClient.from('user_pins').delete().eq('user_id', currentUser.id).eq('location_name', locationName);
         if (error) {
           alert('Kunde inte radera: ' + error.message);
         } else {
@@ -900,15 +897,11 @@
       }
     }
 
-    function closeLocationModal() {
-      document.getElementById('location-modal').classList.add('hidden');
-    }
+    function closeLocationModal() { document.getElementById('location-modal').classList.add('hidden'); }
 
     function updateCharCount() {
       const text = document.getElementById('review-input').value;
-      if(text.length > 1000) {
-        document.getElementById('review-input').value = text.substring(0, 1000);
-      }
+      if (text.length > 1000) { document.getElementById('review-input').value = text.substring(0, 1000); }
       document.getElementById('char-count').innerText = document.getElementById('review-input').value.length;
     }
 
@@ -918,10 +911,7 @@
 
     async function savePin() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
-      if (!currentUser) {
-        openAuthModal();
-        return;
-      }
+      if (!currentUser) { openAuthModal(); return; }
 
       const rawLocation = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
@@ -930,7 +920,6 @@
       if (review.length > 1000) return alert('Tipet får max vara 1000 tecken!');
 
       const normalizedLocation = normalizeLocationName(rawLocation);
-
       const saveBtn = document.querySelector('#pin-form button[onclick="savePin()"]');
       const originalText = saveBtn.innerText;
       saveBtn.innerText = 'Letar koordinater...';
@@ -949,10 +938,7 @@
 
         const lat = parseFloat(geoData[0].lat);
         const lng = parseFloat(geoData[0].lon);
-        
-        const displayName = (geoData[0].display_name) 
-          ? geoData[0].display_name.split(',')[0] 
-          : rawLocation;
+        const displayName = geoData[0].display_name ? geoData[0].display_name.split(',')[0] : rawLocation;
 
         const { error } = await supabaseClient.from('user_pins').upsert({
           user_id: currentUser.id,
@@ -985,8 +971,7 @@
       if (travelersBtn) {
         travelersBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const dropdown = document.getElementById('travelers-dropdown');
-          dropdown.classList.toggle('hidden');
+          document.getElementById('travelers-dropdown').classList.toggle('hidden');
         });
       }
     });
