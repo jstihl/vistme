@@ -97,6 +97,9 @@
               </div>
             </div>
           </div>
+
+          <!-- Ny Om & Villkor-knapp -->
+          <button onclick="openOmModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">ℹ️ Om & Villkor</button>
         </div>
       </div>
       
@@ -121,6 +124,35 @@
     <span class="text-xl">📝</span>
     <span class="hidden sm:inline">Lägg till Tip</span>
   </button>
+
+  <!-- Om & Villkor Modal -->
+  <div id="om-modal" class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden p-6 max-h-[85vh]">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+        <h2 class="text-lg font-bold text-indigo-300">ℹ️ Om VistMe & Villkor</h2>
+        <button onclick="closeOmModal()" class="text-slate-400 hover:text-white text-2xl cursor-pointer">✕</button>
+      </div>
+      <div class="overflow-y-auto flex-1 pr-2 space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+        <div>
+          <h3 class="font-bold text-amber-400 mb-1 text-sm">🌍 Vad är VistMe?</h3>
+          <p>VistMe är en global digital nomad- och resenärskarta där du kan fästa dina egna "Post-its" med tips, rekommendationer och upplevelser från platser du besöker runt om i världen. Upptäck vad andra resenärer har hittat på och dela dina egna äventyr!</p>
+        </div>
+        <div class="pt-2 border-t border-slate-800">
+          <h3 class="font-bold text-amber-400 mb-1 text-sm">📜 Villkor & Regler</h3>
+          <ul class="list-disc list-inside space-y-1.5 text-slate-300">
+            <li><strong>Respektfull ton:</strong> Håll alltid en god ton i dina inlägg och kommentarer.</li>
+            <li><strong>Inget stötande innehåll:</strong> Svordomar, hatiskt innehåll eller olämpliga ord är strikt förbjudet.</li>
+            <li><strong>Religiösa termer:</strong> Undvik religiösa eller bibliska begrepp i smeknamn och inlägg.</li>
+            <li><strong>Integritet & Smeknamn:</strong> Använd inte riktiga personnamn som smeknamn. Smeknamn måste vara mellan 4–20 tecken och innehålla både bokstäver och siffror (t.ex. <em>NomadJasmin7</em>).</li>
+            <li><strong>Ansvar:</strong> Du ansvarar själv för det innehåll och de tips du publicerar på kartan. Olämpliga inlägg kan raderas.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-800 text-right">
+        <button onclick="closeOmModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs sm:text-sm cursor-pointer">Stäng</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Witty Post-it Popup (Med animering) -->
   <div id="auth-required-modal" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -469,6 +501,14 @@
       document.getElementById('auth-required-modal').classList.add('hidden');
     }
 
+    function openOmModal() {
+      document.getElementById('om-modal').classList.remove('hidden');
+    }
+
+    function closeOmModal() {
+      document.getElementById('om-modal').classList.add('hidden');
+    }
+
     function openImageModal(imgSrc) {
       if (!imgSrc) return;
       document.getElementById('modal-big-img').src = imgSrc;
@@ -486,7 +526,7 @@
       
       const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
       const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-      const randomNumber = Math.floor(Math.random() * 900) + 100; // 3-siffrigt tal för att klara längden 4-20
+      const randomNumber = Math.floor(Math.random() * 900) + 100;
       
       const generated = `${randomAdjective}${randomNoun}${randomNumber}`;
       document.getElementById('profile-nickname').value = generated;
@@ -555,7 +595,6 @@
       const pinEmoji = document.getElementById('selected-pin-emoji').value;
       const errorEl = document.getElementById('nickname-error');
 
-      // Kör valideringen
       const validation = validateFullNickname(nickname);
       if (!validation.valid) {
         errorEl.innerText = validation.error;
