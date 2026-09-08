@@ -44,13 +44,32 @@
       border: none !important;
     }
 
-    /* Post-it styling */
+    /* Animation för att lappen ska dyka in med en skön wobble/studs */
+    @keyframes wobbleZoom {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) rotate(-10deg);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05) rotate(3deg);
+      }
+      70% {
+        transform: scale(0.95) rotate(-2deg);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) rotate(-1.5deg);
+      }
+    }
+
+    /* Post-it styling med animationen pålagd */
     .postit-note {
       background: #ec4899; /* Rosa post-it */
       color: #1e1b4b;
       box-shadow: 4px 10px 25px rgba(0,0,0,0.5);
-      transform: rotate(-1.5deg);
       font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+      animation: wobbleZoom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
   </style>
 </head>
@@ -103,7 +122,7 @@
     <span class="hidden sm:inline">Lägg till Tip</span>
   </button>
 
-  <!-- Witty Post-it Popup (När man inte är inloggad) -->
+  <!-- Witty Post-it Popup (Med animering) -->
   <div id="auth-required-modal" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="postit-note w-full max-w-xs p-6 rounded-sm relative flex flex-col items-center text-center">
       <!-- "Tape" i toppen -->
@@ -815,7 +834,7 @@
           : rawLocation;
 
         const { error } = await supabaseClient.from('user_pins').upsert({
-          user_id: currentUser.id,
+          user_id:currentUser.id,
           location_name: normalizedLocation,
           display_name: displayName,
           review_text: review,
