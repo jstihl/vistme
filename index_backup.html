@@ -39,13 +39,18 @@
       filter: brightness(0.65) invert(1) contrast(1.5) hue-rotate(190deg) saturate(0.8);
     }
 
-    .sheet-transition { 
-      transition: transform 0.3s ease-in-out; 
-    }
-
     .custom-map-pin {
       background: transparent !important;
       border: none !important;
+    }
+
+    /* Post-it styling */
+    .postit-note {
+      background: #ec4899; /* Rosa post-it */
+      color: #1e1b4b;
+      box-shadow: 4px 10px 25px rgba(0,0,0,0.5);
+      transform: rotate(-1.5deg);
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
     }
   </style>
 </head>
@@ -98,35 +103,68 @@
     <span class="hidden sm:inline">Lägg till Tip</span>
   </button>
 
-  <!-- Bottom Sheet / Modal -->
-  <div id="bottom-sheet" class="fixed inset-x-0 bottom-0 z-20 bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl sheet-transition transform translate-y-full max-h-[98vh] overflow-y-auto">
-    <div class="max-w-7xl mx-auto">
-      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 cursor-pointer mt-4" onclick="closeBottomSheet()"></div>
-      <div class="px-6 pb-6">
+  <!-- Witty Post-it Popup (När man inte är inloggad) -->
+  <div id="auth-required-modal" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="postit-note w-full max-w-xs p-6 rounded-sm relative flex flex-col items-center text-center">
+      <!-- "Tape" i toppen -->
+      <div class="absolute -top-3 w-16 h-6 bg-yellow-200/40 backdrop-blur-sm border border-white/20 rotate-1"></div>
+      
+      <span class="text-3xl mb-2">🛑</span>
+      <h3 class="font-bold text-lg mb-2 text-pink-950">Hoppsan!</h3>
+      <p class="text-sm font-medium leading-relaxed mb-6 text-pink-900">
+        Kartor minns allt, men vi behöver veta vem du är först! Logga in innan du sätter upp dina hemliga tips. 😉📌
+      </p>
+
+      <div class="flex flex-col gap-2 w-full">
+        <button onclick="loginWithGoogle()" class="w-full bg-slate-950 text-white py-2.5 rounded-lg font-bold text-xs hover:bg-slate-800 transition cursor-pointer shadow">
+          Logga in med Google
+        </button>
+        <button onclick="closeAuthModal()" class="w-full text-pink-950 hover:text-black py-1.5 text-xs font-semibold cursor-pointer">
+          Nja, kanske senare
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Modal för Plats / Recensioner / Lägg till -->
+  <div id="location-modal" class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden p-6 max-h-[85vh]">
+      
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+        <div>
+          <h2 id="sheet-title" class="text-xl font-bold text-amber-400">Välj en plats</h2>
+          <p id="sheet-subtitle" class="text-slate-400 text-xs">Klicka på en nål för att läsa tips</p>
+        </div>
+        <button onclick="closeLocationModal()" class="text-slate-400 hover:text-white text-2xl cursor-pointer">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 pr-1 space-y-4">
         <!-- Visar recensioner för en plats -->
-        <div id="sheet-content">
-          <h2 id="sheet-title" class="text-2xl font-bold mb-1">Välj en plats</h2>
-          <p id="sheet-subtitle" class="text-slate-400 text-sm mb-4">Klicka på en nål för att läsa tips</p>
-          <div id="reviews-list" class="space-y-4"></div>
+        <div id="sheet-content" class="space-y-3">
+          <div id="reviews-list" class="space-y-3"></div>
         </div>
 
         <!-- Formulär: Lägg till / Redigera nål -->
         <div id="pin-form" class="hidden space-y-4">
-          <h2 id="form-title" class="text-xl font-bold text-amber-400">Vad är ditt bästa tips här idag?</h2>
-          <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Larnaca)" class="w-full bg-gradient-to-b from-slate-900/95 to-slate-900/70 border border-slate-700/50 rounded-lg p-4 text-white focus:outline-none focus:border-amber-400 text-base font-medium shadow-md">
+          <h2 id="form-title" class="text-lg font-bold text-amber-400">Vad är ditt bästa tips här idag?</h2>
+          <input type="text" id="location-input" placeholder="Stad/Plats (t.ex. Larnaca)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-400 text-sm font-medium shadow-md">
           
           <div class="relative">
-            <textarea id="review-input" maxlength="1000" rows="5" oninput="updateCharCount()" placeholder="Skriv ditt tips, en varning eller något kul som händer (Max 1 000 tecken)..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-400 resize-none"></textarea>
+            <textarea id="review-input" maxlength="1000" rows="4" oninput="updateCharCount()" placeholder="Skriv ditt tips, en varning eller något kul som händer (Max 1 000 tecken)..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-400 resize-none text-sm"></textarea>
             <div class="text-right text-xs text-slate-500 mt-1">
               <span id="char-count">0</span> / 1000 tecken
             </div>
           </div>
 
           <div class="flex gap-3">
-            <button onclick="savePin()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 rounded-xl font-bold transition cursor-pointer">Sätt upp lapp</button>
-            <button onclick="closeBottomSheet()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-3 rounded-xl font-medium transition cursor-pointer">Avbryt</button>
+            <button onclick="savePin()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-2.5 rounded-xl font-bold transition cursor-pointer text-sm">Sätt upp lapp</button>
+            <button onclick="closeLocationModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl font-medium transition cursor-pointer text-sm">Avbryt</button>
           </div>
         </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-800 text-right">
+        <button onclick="closeLocationModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs cursor-pointer">Stäng</button>
       </div>
     </div>
   </div>
@@ -140,7 +178,7 @@
       </div>
       <div id="mypins-list-container" class="overflow-y-auto space-y-3 flex-1 pr-1"></div>
       <div class="mt-4 pt-3 border-t border-slate-700 text-right">
-        <button onclick="closeMyPinsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm">Stäng</button>
+        <button onclick="closeMyPinsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm cursor-pointer">Stäng</button>
       </div>
     </div>
   </div>
@@ -156,7 +194,7 @@
         Inga aktiva anmälningar just nu.
       </div>
       <div class="mt-4 pt-3 border-t border-slate-700 text-right">
-        <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm">Stäng</button>
+        <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm cursor-pointer">Stäng</button>
       </div>
     </div>
   </div>
@@ -380,7 +418,7 @@
 
     function openProfileModal() {
       if (!currentUser) {
-        alert('Du måste logga in först!');
+        openAuthModal();
         return;
       }
 
@@ -402,6 +440,14 @@
 
     function closeProfileModal() {
       document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    function openAuthModal() {
+      document.getElementById('auth-required-modal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-required-modal').classList.add('hidden');
     }
 
     function openImageModal(imgSrc) {
@@ -538,7 +584,10 @@
 
     // Mina Post-its Modal med en rad + Läs mer och Redigera-knapp
     async function openMyPinsModal() {
-      if (!currentUser) return alert('Du måste logga in först!');
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
       document.getElementById('mypins-modal').classList.remove('hidden');
       const container = document.getElementById('mypins-list-container');
       container.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">Laddar dina inlägg...</p>';
@@ -595,15 +644,16 @@
       }
     }
 
-    // Öppna redigeringsformuläret direkt från "Mina Post-its"
     function editPinFromMyPins(displayName, encodedText) {
       closeMyPinsModal();
       document.getElementById('pin-form').classList.remove('hidden');
       document.getElementById('sheet-content').classList.add('hidden');
+      document.getElementById('sheet-title').innerText = "Redigera tips";
+      document.getElementById('sheet-subtitle').innerText = displayName;
       document.getElementById('location-input').value = displayName;
       document.getElementById('review-input').value = decodeURIComponent(encodedText);
       updateCharCount();
-      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+      document.getElementById('location-modal').classList.remove('hidden');
     }
 
     function closeMyPinsModal() {
@@ -620,15 +670,17 @@
 
     function openPinModal() {
       if (!currentUser && supabaseClient) {
-        alert('Du måste logga in för att lägga till tips!');
-        return loginWithGoogle();
+        openAuthModal();
+        return;
       }
       document.getElementById('pin-form').classList.remove('hidden');
       document.getElementById('sheet-content').classList.add('hidden');
+      document.getElementById('sheet-title').innerText = "Nytt tips";
+      document.getElementById('sheet-subtitle').innerText = "Sätt upp en post-it på kartan";
       document.getElementById('location-input').value = '';
       document.getElementById('review-input').value = '';
       updateCharCount();
-      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+      document.getElementById('location-modal').classList.remove('hidden');
     }
 
     function showLocationDetails(loc) {
@@ -644,61 +696,47 @@
       loc.reviews.forEach((review, index) => {
         const isOwner = currentUser && review.user_id === currentUser.id;
         
-        const userHeader = document.createElement('div');
-        userHeader.className = 'bg-slate-800/60 border border-slate-700/60 rounded-2xl p-3 text-slate-200 cursor-pointer hover:bg-slate-800 transition';
-        userHeader.innerHTML = `
-          <div class="flex items-center justify-between">
-            <span class="font-semibold text-sm">${review.author_emoji || '📍'} ${escapeHtml(review.author_nickname)}</span>
-            <span class="text-xs text-slate-400">${new Date(review.updated_at).toLocaleDateString()}</span>
-          </div>
-        `;
-        
-        userHeader.onclick = () => {
-          const detailsDiv = document.getElementById(`review-details-${index}`);
-          if (detailsDiv) {
-            detailsDiv.classList.toggle('hidden');
-          }
-        };
-        
-        reviewsList.appendChild(userHeader);
-
-        const reviewDetails = document.createElement('div');
-        reviewDetails.id = `review-details-${index}`;
-        reviewDetails.className = 'hidden bg-slate-900/40 border-l-2 border-amber-400 ml-4 pl-4 py-3 text-slate-300 text-sm mb-3 rounded';
+        const card = document.createElement('div');
+        card.className = 'bg-slate-800/80 border border-slate-700 rounded-xl p-3 text-slate-200 space-y-2';
         
         let ownerActions = '';
         if (isOwner) {
           ownerActions = `
-            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-700/40 text-xs">
-              <button onclick="editPin('${review.location_name}', '${escapeHtml(review.review_text)}')" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">✏️ Redigera</button>
-              <span class="text-slate-600">|</span>
+            <div class="flex gap-3 pt-2 border-t border-slate-700 text-xs">
+              <button onclick="editPin('${escapeHtml(loc.display_name)}', \`${encodeURIComponent(review.review_text)}\`)" class="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer">✏️ Redigera</button>
               <button onclick="deletePin('${review.location_name}')" class="text-rose-400 hover:text-rose-300 font-medium cursor-pointer">🗑️ Radera</button>
             </div>
           `;
         }
         
-        reviewDetails.innerHTML = `
-          <p class="whitespace-pre-wrap leading-relaxed mb-2">${escapeHtml(review.review_text)}</p>
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs text-slate-400 border-b border-slate-700/50 pb-1">
+            <span class="font-semibold text-slate-200">${review.author_emoji || '📍'} ${escapeHtml(review.author_nickname)}</span>
+            <span>${new Date(review.updated_at).toLocaleDateString()}</span>
+          </div>
+          <p class="whitespace-pre-wrap leading-relaxed text-sm text-slate-300 pt-1">${escapeHtml(review.review_text)}</p>
           ${ownerActions}
         `;
         
-        reviewsList.appendChild(reviewDetails);
+        reviewsList.appendChild(card);
       });
 
-      document.getElementById('bottom-sheet').classList.remove('translate-y-full');
+      document.getElementById('location-modal').classList.remove('hidden');
     }
 
-    function editPin(locationName, text) {
+    function editPin(displayName, encodedText) {
       document.getElementById('sheet-content').classList.add('hidden');
       document.getElementById('pin-form').classList.remove('hidden');
-      document.getElementById('location-input').value = locationName;
-      document.getElementById('review-input').value = text;
+      document.getElementById('sheet-title').innerText = "Redigera tips";
+      document.getElementById('sheet-subtitle').innerText = displayName;
+      document.getElementById('location-input').value = displayName;
+      document.getElementById('review-input').value = decodeURIComponent(encodedText);
       updateCharCount();
     }
 
     async function deletePin(locationName) {
       if (!currentUser) {
-        alert('Du måste logga in för att radera tips!');
+        openAuthModal();
         return;
       }
       if (!confirm('Är du säker på att du vill radera ditt tip?')) return;
@@ -714,7 +752,7 @@
           alert('Kunde inte radera: ' + error.message);
         } else {
           alert('Tipet har raderats.');
-          closeBottomSheet();
+          closeLocationModal();
           loadPins();
         }
       } catch (err) {
@@ -722,8 +760,8 @@
       }
     }
 
-    function closeBottomSheet() {
-      document.getElementById('bottom-sheet').classList.add('translate-y-full');
+    function closeLocationModal() {
+      document.getElementById('location-modal').classList.add('hidden');
     }
 
     function updateCharCount() {
@@ -740,7 +778,10 @@
 
     async function savePin() {
       if (!supabaseClient) return alert('Supabase är inte konfigurerat!');
-      if (!currentUser) return loginWithGoogle();
+      if (!currentUser) {
+        openAuthModal();
+        return;
+      }
 
       const rawLocation = document.getElementById('location-input').value.trim();
       const review = document.getElementById('review-input').value.trim();
@@ -773,15 +814,7 @@
           ? geoData[0].display_name.split(',')[0] 
           : rawLocation;
 
-        const { error } = await supabaseClient.onsert ? await supabaseClient.from('user_pins').upsert({
-          user_id: currentUser.id,
-          location_name: normalizedLocation,
-          display_name: displayName,
-          review_text: review,
-          lat: lat,
-          lng: lng,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,location_name' }) : await supabaseClient.from('user_pins').upsert({
+        const { error } = await supabaseClient.from('user_pins').upsert({
           user_id: currentUser.id,
           location_name: normalizedLocation,
           display_name: displayName,
@@ -795,7 +828,7 @@
           alert('Ett fel uppstod: ' + error.message);
         } else {
           alert('Ditt tip har sparats! 📍');
-          closeBottomSheet();
+          closeLocationModal();
           loadPins();
           map.setView([lat, lng], 6);
         }
