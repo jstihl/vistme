@@ -47,6 +47,14 @@
       background: transparent !important;
       border: none !important;
     }
+
+    /* Hjälpklass för att korta av text till en rad */
+    .line-clamp-1 {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;  
+      overflow: hidden;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans h-full w-full relative">
@@ -58,7 +66,7 @@
         <span class="text-2xl">📌</span>
         <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hidden sm:inline">VistMe</h1>
         
-        <!-- Meny-knappar (Nu med aktiva funktioner) -->
+        <!-- Meny-knappar -->
         <div id="menu-buttons" class="hidden sm:flex items-center gap-2">
           <button onclick="openMyPinsModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer">🔹 Mina Post-its</button>
           <button id="granska-btn" class="hidden bg-red-600/20 hover:bg-red-600/30 text-red-300 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border border-red-500/30" onclick="openAdminModal()">📋 Granska anmälningar</button>
@@ -131,7 +139,7 @@
     </div>
   </div>
 
-  <!-- Mina Post-its Modal -->
+  <!-- Mina Post-its Modal (Med Read more-funktion) -->
   <div id="mypins-modal" class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden p-6 max-h-[85vh]">
       <div class="flex justify-between items-center mb-4">
@@ -536,7 +544,7 @@
       document.getElementById('travelers-dropdown').classList.add('hidden');
     }
 
-    // Funktioner för att öppna modaler för Mina Inlägg och Admin
+    // Mina Post-its Modal med Read more-funktion
     async function openMyPinsModal() {
       if (!currentUser) return alert('Du måste logga in först!');
       document.getElementById('mypins-modal').classList.remove('hidden');
@@ -550,18 +558,38 @@
       }
 
       container.innerHTML = '';
-      data.forEach(pin => {
+      data.forEach((pin, index) => {
         const div = document.createElement('div');
-        div.className = 'bg-slate-800 p-3 rounded-xl text-xs space-y-1';
+        div.className = 'bg-slate-800 p-3 rounded-xl text-xs space-y-2';
+        
+        const fullText = escapeHtml(pin.review_text);
+        const isLongText = fullText.length > 90;
+
         div.innerHTML = `
           <div class="font-bold text-amber-400">${escapeHtml(pin.display_name)}</div>
-          <div class="text-slate-300">${escapeHtml(pin.review_text)}</div>
+          <div class="text-slate-300 relative">
+            <span id="pin-text-${index}" class="${isLongText ? 'line-clamp-1 block' : ''}">${fullText}</span>
+            ${isLongText ? `<button onclick="toggleReadMore(${index})" id="btn-read-${index}" class="text-indigo-400 hover:text-indigo-300 font-semibold mt-1 inline-block cursor-pointer">Read more...</button>` : ''}
+          </div>
           <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
             <button onclick="deletePin('${pin.location_name}'); closeMyPinsModal();" class="text-rose-400 hover:text-rose-300 cursor-pointer">Radera</button>
           </div>
         `;
         container.appendChild(div);
       });
+    }
+
+    function toggleReadMore(index) {
+      const textSpan = document.getElementById(`pin-text-${index}`);
+      const btn = document.getElementById(`btn-read-${index}`);
+      
+      if (textSpan.classList.contains('line-clamp-1')) {
+        textSpan.classList.remove('line-clamp-1', 'block');
+        btn.innerText = 'Visa mindre';
+      } else {
+        textSpan.classList.add('line-clamp-1', 'block');
+        btn.innerText = 'Read more...';
+      }
     }
 
     function closeMyPinsModal() {
