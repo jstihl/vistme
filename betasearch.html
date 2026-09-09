@@ -97,7 +97,7 @@
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
 
-        // Sök efter plats (med gratis CORS-proxy)
+        // Sök efter plats direkt via OpenStreetMap (Nominatim API)
         searchInput.addEventListener('input', async function(e) {
             const query = e.target.value.trim();
             if (query.length < 2) {
@@ -106,9 +106,14 @@
             }
 
             try {
-                const proxyUrl = 'https://corsproxy.io/?';
                 const apiUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
-                const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+                
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'User-Agent': 'VistMe-DigitalKorktavla/1.0'
+                    }
+                });
+                
                 const results = await response.json();
                 
                 searchResults.innerHTML = '';
@@ -123,7 +128,7 @@
                     div.className = 'search-result-item text-xs text-gray-300';
                     div.innerText = result.display_name.substring(0, 60);
                     div.onclick = () => {
-                        map.flyTo([result.lat, result.lon], 12);
+                        map.flyTo([parseFloat(result.lat), parseFloat(result.lon)], 14);
                         searchInput.value = '';
                         searchResults.classList.add('hidden');
                     };
